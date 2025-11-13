@@ -1,0 +1,2 @@
+nodes,edges,energy_total,energy_grad,energy_resid,grad_fraction,resid_fraction,use_independence,eps
+1475,150000,3422038.8626011563,1318947.4427581818,2103067.2670364613,0.3854273711420171,0.6145655708415538,1,0.5
