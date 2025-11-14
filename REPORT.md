@@ -2,6 +2,11 @@
 
 This report summarizes the first phases of the tract→tract OD diagnostics on SEMCOG 7 counties (2020). It consolidates key figures and tables, and lists reproducible outputs and file locations.
 
+<p align="center">
+  <img src="results/figures/r2_eta.png" width="520" alt="R² and η bars (independent baseline)">
+  <br><em>R² (potential fit) higher → more "potential‑like"; η (non‑reciprocity) higher → stronger loops.</em>
+</p>
+
 ## Plain‑language summary (for non‑specialists)
 
 - What we study
@@ -43,11 +48,12 @@ Glossary
 
 1) R² / η bars (independent baseline)
 
-![R2_eta](results/figures/r2_eta.png)
-
 2) Potential (π) by county (boxplot)
 
-![pi_box_by_county](results/figures/pi_box_by_county.png)
+<p align="center">
+  <img src="results/figures/pi_box_by_county.png" width="520" alt="County‑level potential (π) boxplots">
+  <br><em>Low‑π → High‑π indicates the residual preference direction; county π reflects net attraction gradients.</em>
+</p>
 
 County-level summary of π (median and IQR):
 
@@ -65,7 +71,10 @@ Notes: π is anchored (relative). Interpret relative ranks and spreads (median/I
 
 3) Locality curve (distance-thresholded subsets, train+evaluate)
 
-![locality_curve](results/figures/fig_locality_curve.png)
+<p align="center">
+  <img src="results/figures/fig_locality_curve.png" width="520" alt="Locality curve (R² vs distance threshold)">
+  <br><em>Short distances are more potential‑like; adding medium/long links strengthens loop structure and reduces R².</em>
+</p>
 
 Locality points (r0 km → R², edges):
 
