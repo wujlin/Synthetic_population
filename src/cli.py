@@ -6,7 +6,7 @@ from typing import Optional
 from . import io as io_mod
 from . import hodge as hodge_mod
 from .locality import bin_by_distance, plot_locality_curve, run_locality_curve
-from .gravity import residual_from_parquet
+from .gravity import residual_from_parquet, residual_glm_ppml
 import json
 
 
@@ -360,11 +360,111 @@ def main():
     sp.add_argument("--eps", type=float, default=0.5)
     sp.set_defaults(func=cmd_baseline)
 
+    def cmd_baseline_glm(args: argparse.Namespace) -> None:
+        inp = os.path.join("project", "data", "processed", "od_clean.parquet")
+        if not (os.path.exists(inp)):
+            # fallback csv
+            inp = os.path.join("project", "data", "processed", "od_clean.csv")
+        edges_dist = os.path.join("project", "data", "processed", "edges_with_distance.csv")
+        outp = os.path.join("project", "data", "processed", "od_residual_glm.parquet")
+        logp = os.path.join("project", "results", "diagnostics", "baseline_glm_summary.json")
+        res = residual_glm_ppml(
+            inp, edges_dist, outp, logp,
+            use_county_pair_fe=args.county_pair_fe,
+            eps=args.eps,
+            backend=args.backend,
+            sample_n=args.sample_n,
+            max_iter=getattr(args, 'max_iter', 3000),
+            alpha=getattr(args, 'alpha', 1e-8),
+            standardize_dist=getattr(args, 'standardize_dist', False),
+        )
+        print(json.dumps({"baseline_glm": res}, ensure_ascii=False))
+    sp = sub.add_parser("baseline_glm", help="PPML with origin/dest FE + distance [+ county×county FE]")
+    sp.add_argument("--eps", type=float, default=0.5)
+    sp.add_argument("--county-pair-fe", action="store_true")
+    sp.add_argument("--backend", type=str, default='auto', choices=['auto','sklearn','statsmodels'], help="Force backend (auto tries statsmodels then sklearn)")
+    sp.add_argument("--sample-n", type=int, default=None, help="Optional downsample N for PPML fit")
+    sp.add_argument("--max-iter", type=int, default=3000, help="Max iterations for PPML solver")
+    sp.add_argument("--alpha", type=float, default=1e-8, help="L2 regularization for PPML")
+    sp.add_argument("--standardize-dist", action="store_true", help="Z-score distance before fitting")
+    sp.set_defaults(func=cmd_baseline_glm)
+
     sp = sub.add_parser("potential_hodge", help="Fit potential from residuals and export diagnostics")
     sp.add_argument("--max-edges", type=int, default=200000)
     sp.add_argument("--maxiter", type=int, default=500)
     sp.add_argument("--tol", type=float, default=1e-6)
     sp.set_defaults(func=cmd_potential)
+
+    def cmd_potential_glm(args: argparse.Namespace) -> None:
+        # Load GLM residuals and distances
+        inp = os.path.join("project", "data", "processed", "od_residual_glm.parquet")
+        if not os.path.exists(inp):
+            inp = os.path.join("project", "data", "processed", "od_residual_glm.csv")
+        import csv as _csv
+        rows_ext=[]
+        if inp.endswith('.parquet'):
+            try:
+                import pandas as pd  # type: ignore
+                df = pd.read_parquet(inp)
+                for w,h,s,lr,d,mu in df[["work","home","S000","log_resid_glm","dist","mu_hat"]].itertuples(index=False, name=None):
+                    rows_ext.append((w,h,float(s),float(lr),float(d) if d==d else None,float(mu)))
+            except Exception:
+                pass
+        if not rows_ext:
+            with open(inp, 'r', encoding='utf-8') as f:
+                rdr = _csv.DictReader(f)
+                for r in rdr:
+                    d = r.get('dist'); mu = r.get('mu_hat');
+                    lr = r.get('log_resid_glm') if 'log_resid_glm' in r else r.get('log_resid')
+                    rows_ext.append((r['work'], r['home'], float(r['S000']), float(lr), float(d) if d not in (None,'','None') else None, float(mu) if mu not in (None,'','None') else None))
+        from .hodge import run_hodge_from_residual_robust
+        phi, summary, diags, topk = run_hodge_from_residual_robust(
+            rows_ext,
+            weight_type=args.weight_type,
+            cap_tau=args.cap_tau,
+            drop_self=args.drop_self,
+            sample_edges=args.sample_edges,
+            bins_dist=args.bins_dist,
+            bins_weight=args.bins_weight,
+            seed=args.seed,
+            max_edges=args.max_edges,
+            maxiter=args.maxiter,
+            tol=args.tol,
+        )
+        # Save outputs
+        out_nodes = os.path.join("project", "results", "diagnostics", "nodes_potential_glm.csv")
+        io_mod.write_csv(out_nodes, [(k,v) for k,v in phi.items()], header=["geoid","pi"])
+        out_edges = os.path.join("project", "results", "diagnostics", "edges_decomp_glm.csv")
+        io_mod.write_csv(out_edges, diags, header=["u","v","weight","g_ij","pred","resid"])
+        out_topk = os.path.join("project", "results", "diagnostics", "edges_topk_glm.csv")
+        io_mod.write_csv(out_topk, topk, header=["u","v","weight","g_ij","pred","resid"])
+        # robust summary
+        out_summary = os.path.join("project", "results", "diagnostics", "summary_robustness.json")
+        rob = dict(summary)
+        rob.update({
+            "weight_type": args.weight_type,
+            "cap_tau": args.cap_tau,
+            "drop_self": bool(args.drop_self),
+            "sample_edges": args.sample_edges or 0,
+            "bins_dist": args.bins_dist,
+            "bins_weight": args.bins_weight,
+            "seed": args.seed,
+        })
+        with open(out_summary,'w',encoding='utf-8') as f:
+            json.dump(rob, f)
+        print("Potential/Hodge GLM robustness saved.")
+    sp = sub.add_parser("potential_hodge_glm", help="Robust Hodge on GLM residuals with sampling/weights")
+    sp.add_argument("--weight-type", type=str, default="sum", choices=["sum","cap","mu","eij"])
+    sp.add_argument("--cap-tau", type=float, default=100.0)
+    sp.add_argument("--drop-self", action="store_true")
+    sp.add_argument("--sample-edges", type=int, default=None)
+    sp.add_argument("--bins-dist", type=int, default=8)
+    sp.add_argument("--bins-weight", type=int, default=8)
+    sp.add_argument("--seed", type=int, default=42)
+    sp.add_argument("--max-edges", type=int, default=200000)
+    sp.add_argument("--maxiter", type=int, default=500)
+    sp.add_argument("--tol", type=float, default=1e-6)
+    sp.set_defaults(func=cmd_potential_glm)
 
     sp = sub.add_parser("locality_curve", help="R² vs distance thresholds")
     sp.add_argument("--radii", type=int, nargs='*', default=None)

@@ -290,6 +290,133 @@ def run_hodge_from_residual(
     return phi, summary, diags
 
 
+def run_hodge_from_residual_robust(
+    residual_rows_ext: Iterable[Tuple[str, str, float, float, Optional[float], Optional[float]]],
+    weight_type: str = 'sum',  # 'sum' | 'cap' | 'mu' | 'eij'
+    cap_tau: float = 100.0,
+    drop_self: bool = False,
+    sample_edges: Optional[int] = None,
+    bins_dist: int = 8,
+    bins_weight: int = 8,
+    seed: int = 42,
+    max_edges: Optional[int] = None,
+    maxiter: int = 500,
+    tol: float = 1e-6,
+):
+    """
+    residual_rows_ext: iterator of (work, home, F_ij, log_resid, dist_km, mu_ij)
+    Returns: phi, summary, diags, topk_edges
+    """
+    import random
+    # Build directed maps
+    F: Dict[Tuple[str, str], float] = {}
+    LR: Dict[Tuple[str, str], float] = {}
+    MU: Dict[Tuple[str, str], float] = {}
+    DIST: Dict[Tuple[str, str], float] = {}
+    nodes = set()
+    for w, h, s, lr, d, mu in residual_rows_ext:
+        if drop_self and w == h:
+            continue
+        F[(w, h)] = F.get((w, h), 0.0) + float(s)
+        LR[(w, h)] = float(lr)
+        if mu is not None:
+            MU[(w, h)] = float(mu)
+        if d is not None:
+            DIST[(w, h)] = float(d)
+        nodes.add(w); nodes.add(h)
+    # Undirected pairs
+    edges = []  # (u,v,w_edge,g,dist_edge)
+    seen = set()
+    for (i,j) in list(F.keys()):
+        if (j,i) in seen: continue
+        seen.add((i,j)); seen.add((j,i))
+        u,v = (i,j) if i<j else (j,i)
+        # weights
+        w_sum = F.get((u,v),0.0) + F.get((v,u),0.0)
+        if weight_type == 'sum':
+            w_edge = w_sum
+        elif weight_type == 'cap':
+            w_edge = min(w_sum, cap_tau)
+        elif weight_type == 'mu':
+            w_edge = MU.get((u,v),0.0) + MU.get((v,u),0.0)
+        elif weight_type == 'eij':
+            # fallback to sum if not provided; caller can override by precomputing
+            w_edge = w_sum
+        else:
+            w_edge = w_sum
+        # g signal (anti-symmetric)
+        g = LR.get((u,v),0.0) - LR.get((v,u),0.0)
+        # distance: min of directed if both present
+        de = None
+        du = DIST.get((u,v)); dv = DIST.get((v,u))
+        if du is not None and dv is not None:
+            de = min(du, dv)
+        elif du is not None:
+            de = du
+        elif dv is not None:
+            de = dv
+        edges.append((u,v,w_edge,g,de))
+    # Stratified sampling by distance×weight
+    if sample_edges and sample_edges < len(edges):
+        ds = sorted([e[4] for e in edges if e[4] is not None])
+        ws = sorted([e[2] for e in edges])
+        def quantiles(vals, k):
+            if not vals: return []
+            qs=[vals[int(len(vals)*i/k)] for i in range(k)] + [vals[-1]]
+            b=[qs[0]]
+            for x in qs[1:]:
+                if x>b[-1]: b.append(x)
+            return b
+        db = quantiles(ds, bins_dist) if ds else []
+        wb = quantiles(ws, bins_weight)
+        # assign cells
+        cells = {}
+        for e in edges:
+            u,v,w,g,d = e
+            di = 0
+            if db and d is not None:
+                for bi in range(len(db)-1):
+                    if (d>=db[bi] and d<=db[bi+1]) or (bi==0 and d<=db[bi+1]):
+                        di=bi; break
+            wi = 0
+            for bj in range(len(wb)-1):
+                if (w>=wb[bj] and w<=wb[bj+1]) or (bj==0 and w<=wb[bj+1]):
+                    wi=bj; break
+            cells.setdefault((di,wi), []).append(e)
+        # target per cell
+        random.seed(seed)
+        per = max(1, int(sample_edges / max(1,len(cells))))
+        new_edges=[]
+        for key, lst in cells.items():
+            if len(lst) <= per:
+                new_edges.extend(lst)
+            else:
+                new_edges.extend(random.sample(lst, per))
+        edges = new_edges
+    # Build edges_u for solver
+    nodes = sorted(nodes)
+    edges_u = [(u,v,w,g) for (u,v,w,g,_d) in edges if w>0]
+    if max_edges and len(edges_u)>max_edges:
+        edges_u.sort(key=lambda t: t[2], reverse=True)
+        edges_u = edges_u[:max_edges]
+    phi, Et, Eg, Er = fit_potential_components(edges_u, nodes, maxiter=maxiter, tol=tol)
+    R2 = 1.0 - (Er / Et) if Et > 0 else 0.0
+    num = den = 0.0
+    diags=[]
+    for (u,v,w,a) in edges_u:
+        pred = phi[v]-phi[u]
+        r = a - pred
+        diags.append((u,v,w,a,pred,r))
+        num += w*abs(r)
+        den += w*abs(a)
+    eta = (num/den) if den>0 else 0.0
+    # Top-K residual edges by |resid|*w
+    diags_sorted = sorted(diags, key=lambda t: abs(t[5])*t[2], reverse=True)
+    topk = diags_sorted[:100]
+    summary = {"energy_total": Et, "energy_grad": Eg, "energy_resid": Er, "R2": R2, "eta": eta, "edges": len(edges_u), "nodes": len(nodes)}
+    return phi, summary, diags, topk
+
+
 def top_triangle_cycles(diags: List[Tuple[str, str, float, float, float, float]], K: int = 100):
     """Heuristic top-K 3-cycles by weight: restrict to top-neighborhood per node.
     Returns list of (i,j,k,cycle_sum, min_w).

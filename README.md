@@ -60,3 +60,6 @@ Outputs
 
 Counties (SEMCOG 7)
 - Wayne(26163), Oakland(26125), Macomb(26099), Washtenaw(26161), Monroe(26115), Livingston(26093), St. Clair(26147).
+
+Pipeline
+- See detailed, step-by-step workflow and acceptance criteria in: project/PIPELINE.md
