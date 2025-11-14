@@ -312,58 +312,14 @@ def cmd_locality_curve(args: argparse.Namespace) -> None:
 
 
 def cmd_export_figs(args: argparse.Namespace) -> None:
-    try:
-        import matplotlib.pyplot as plt  # type: ignore
-    except Exception:
-        print('matplotlib not available; skip figure export.')
-        return
-    # Load potentials (CSV fallback)
-    np_base = os.path.join("project", "results", "diagnostics", "nodes_potential")
-    np_csv = np_base + '.csv'
-    geoid_pi = []
-    import csv as _csv
-    if os.path.exists(np_csv):
-        with open(np_csv,'r',encoding='utf-8') as f:
-            rdr=_csv.DictReader(f)
-            for r in rdr:
-                try:
-                    geoid_pi.append((r['geoid'], float(r['pi'])))
-                except Exception:
-                    pass
-    else:
-        # try parquet -> csv not present
-        try:
-            import pandas as pd  # type: ignore
-            dfp = pd.read_parquet(np_base+'.parquet')
-            geoid_pi = list(dfp[['geoid','pi']].itertuples(index=False, name=None))
-        except Exception:
-            print('no nodes_potential data; skip figure export.')
-            return
-    # Boxplot by county
-    from collections import defaultdict
-    buckets = defaultdict(list)
-    for g, pi in geoid_pi:
-        buckets[str(g)[:5]].append(pi)
-    labels = sorted(buckets.keys())
-    data = [buckets[k] for k in labels if buckets[k]]
-    plt.figure(figsize=(7,4))
-    plt.boxplot(data, labels=[l for l in labels if buckets[l]], showfliers=False)
-    plt.xticks(rotation=45)
-    plt.title('Potential by county')
-    plt.tight_layout()
-    os.makedirs(os.path.join('project','results','figures'), exist_ok=True)
-    plt.savefig(os.path.join('project','results','figures','pi_box_by_county.png'), dpi=150)
-    plt.close()
-    # R2/eta bar
-    with open(os.path.join('project','results','diagnostics','summary.json'),'r',encoding='utf-8') as f:
-        summ = json.load(f)
-    plt.figure(figsize=(4,3))
-    plt.bar(['R2','eta'], [summ.get('R2',0.0), summ.get('eta',0.0)])
-    plt.title('R2 and non-reciprocity')
-    plt.tight_layout()
-    plt.savefig(os.path.join('project','results','figures','r2_eta.png'), dpi=150)
-    plt.close()
-    print('Figures exported.')
+    from .export_figs import export_all
+    out = export_all()
+    made = [k for k,v in out.items() if v]
+    skipped = [k for k,v in out.items() if not v]
+    if made:
+        print('Figures exported:', ', '.join(made))
+    if skipped:
+        print('Skipped (missing matplotlib or data):', ', '.join(skipped))
 
 
 def main():
