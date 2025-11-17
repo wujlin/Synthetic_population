@@ -143,7 +143,7 @@ flowchart LR
 - $\Gamma$（界面项）：残差与 $-\Delta(L\rho)$ 的系数，见 `pde_interface.json`（仅在边界曲率显著时保留）。
 
 ### Acceptance checklist
-- [ ] PPML 收敛：距离系数 $ \lambda_{dist} < 0 $，并且 $\sum \mu \approx \sum F$
+- [ ] PPML 收敛：距离系数 $\lambda_{dist} < 0$，并且 $\sum \mu \approx \sum F$
 - [ ] `nodes_potential_glm.csv` 与 `edges_decomp_glm.csv` 已生成
 - [ ] 相较独立基线：**$R^2$ 上升、$\eta$ 下降**（同样的采样/权重设置）
 - [ ] `rot_summary.json`（η、热点走廊）与 `top_cycles.csv` 已检查
@@ -153,18 +153,18 @@ flowchart LR
 
 | Symbol/Name | Meaning | Notes |
 |---|---|---|
-| `F_ij` | Raw OD (work=i, home=j job count) | CSV column `S000` |
-| `R_i=Σ_j F_ij` | Total outflow at work tract i | Marginal |
-| `W_j=Σ_i F_ij` | Total inflow at home tract j | Marginal |
-| `E_ij` | Independence expected = `R_i·W_j/ΣF` | Scale‑effect baseline |
-| `μ̂_ij` | PPML expectation | Phase 1 output |
-| `log_resid` | `log((F_ij+ε)/(E_ij+ε))` | Independent residual |
-| `log_resid_glm` | `log((F_ij+ε)/(μ̂_ij+ε))` | GLM residual (recommended) |
-| `g_ij` | Directional signal = `log_resid_ij − log_resid_ji` | Anti‑symmetric |
-| `w_ij` | Weight, default `F_ij+F_ji` (can cap `min(·,τ)`) | Hodge weighting |
-| `π` | Potential (node value) | `g_ij ≈ π(j) − π(i)` |
-| `R²` | Potential fit | Higher is better |
-| `η` | Non‑reciprocity | Lower is better |
+| $F_{ij}$ | Raw OD (work=i, home=j job count) | CSV column `S000` |
+| $R_i = \sum_j F_{ij}$ | Total outflow at work tract i | Marginal |
+| $W_j = \sum_i F_{ij}$ | Total inflow at home tract j | Marginal |
+| $E_{ij}$ | Independence expected $= \frac{R_i W_j}{\sum F}$ | Scale‑effect baseline |
+| $\hat{\mu}_{ij}$ | PPML expectation | Phase 1 output |
+| $\log\_resid$ | $\log\frac{F_{ij}+\varepsilon}{E_{ij}+\varepsilon}$ | Independent residual |
+| $\log\_resid\_{\mathrm{glm}}$ | $\log\frac{F_{ij}+\varepsilon}{\hat{\mu}_{ij}+\varepsilon}$ | Phase 1 residual |
+| $g_{ij}$ | Directional signal $=\log\_resid\_{ij}-\log\_resid\_{ji}$ | Anti‑symmetric |
+| $w_{ij}$ | Weight, default $F_{ij}+F_{ji}$ (can cap $\min(\cdot,\tau)$) | Hodge weighting |
+| $\pi$ | Potential (node value) | $g_{ij} \approx \pi(j) - \pi(i)$ |
+| $R^2$ | Potential fit | Higher is better |
+| $\eta$ | Non‑reciprocity | Lower is better |
 - data/processed/
   - nodes.csv: tract GEOID, lat, lon
   - edges.csv: work, home, S000 (filtered to SEMCOG 7 counties)

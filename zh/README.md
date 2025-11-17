@@ -1,7 +1,7 @@
 # 项目简介（中文）
 
 本项目基于 SEMCOG 2020 tract→tract OD 数据，提供「Phase 0–2 清洗 + Phase 3 结构项」的可重复管线，核心目标是：
-1. 通过 PPML 去除规模与距离摩擦，得到残差 $ \log\frac{F_{ij}+\varepsilon}{\hat\mu_{ij}+\varepsilon} $；
+1. 通过 PPML 去除规模与距离摩擦，得到残差 $\log\frac{F_{ij}+\varepsilon}{\hat\mu_{ij}+\varepsilon}$；
 2. 用 Robust Hodge 拆解残差，测量 $R^2$ 与非互易性 $\eta$，并输出循环热点；
 3. 依次拟合势项 $\kappa$、扩散 $D$、界面 $\Gamma$，形成 “4 图 + 4 analyses” 套件。
 
