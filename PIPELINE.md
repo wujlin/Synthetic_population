@@ -27,12 +27,12 @@ Overall: Short‑distance ≈ potential‑like; medium/long‑distance ≈ loop�
 
 ```mermaid
 flowchart LR
-  A[Phase 0 Data readiness] --> B[Phase 1 PPML baseline<br/>log mu = alpha + beta - lambda * dist (+FE)]
-  B --> C[Phase 2 Hodge diagnostics<br/>fit pi -> R2, eta]
+  A["Phase 0 Data readiness"] --> B["Phase 1 PPML baseline<br/>log μ = α + β − λ·dist (+FE)"]
+  B --> C["Phase 2 Hodge diagnostics<br/>fit π → R², η"]
   C --> D{Phase 3+}
-  D --> D1[Locality curves (r*)]
-  D --> D2[Multi-potential / Anti-symmetric]
-  D --> D3[External potential U(x)]
+  D --> D1["Locality curves (r*)"]
+  D --> D2["Multi-potential / Anti-symmetric"]
+  D --> D3["External potential U(x)"]
 ```
 
 ## End‑to‑end pipeline (purpose → steps → outputs/acceptance)
@@ -106,11 +106,11 @@ Flow (Phase 2 → structure terms):
 
 ```mermaid
 flowchart LR
-  H[PPML residuals] --> R[Robust Hodge<br/>(π, g, η)]
-  R --> C[Cycle diagnostics<br/>(rot_diagnostics)]
-  C --> Kappa[pde_fit_kappa]
-  Kappa --> Diff[pde_fit_diffusion]
-  Diff --> Interface[pde_fit_interface]
+  H["PPML residuals"] --> R["Robust Hodge<br/>(π, g, η)"]
+  R --> C["Cycle diagnostics<br/>(rot_diagnostics)"]
+  C --> Kappa["pde_fit_kappa"]
+  Kappa --> Diff["pde_fit_diffusion"]
+  Diff --> Interface["pde_fit_interface"]
 ```
 
 - Phase 3 — Locality (two curves, unified criteria)

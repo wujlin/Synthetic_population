@@ -84,12 +84,12 @@ Layout
 
 ```mermaid
 flowchart LR
-  A[Phase 0 Data readiness] --> B[Phase 1 PPML baseline<br/>log mu = alpha + beta - lambda * dist (+FE)]
-  B --> C[Phase 2 Hodge diagnostics<br/>fit pi -> R2, eta]
+  A["Phase 0 Data readiness"] --> B["Phase 1 PPML baseline<br/>log μ = α + β − λ·dist (+FE)"]
+  B --> C["Phase 2 Hodge diagnostics<br/>fit π → R², η"]
   C --> D{Phase 3+}
-  D --> D1[Locality curves (r*)]
-  D --> D2[Multi-potential / Anti-symmetric]
-  D --> D3[External potential U(x)]
+  D --> D1["Locality curves (r*)"]
+  D --> D2["Multi-potential / Anti-symmetric"]
+  D --> D3["External potential U(x)"]
 ```
 
 ## Requirements
