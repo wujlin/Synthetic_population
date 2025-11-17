@@ -29,6 +29,33 @@ python -m project.src.cli export_figs
   <br><em>Low‑π → High‑π is the residual flow preference; county‑level π reveals net attraction gradients.</em>
 </p>
 
+### Next: fit structure terms (4 analyses)
+```bash
+# 4a) Loop scale & hotspot corridors
+python3 -m project.src.cli rot_diagnostics --topk 2000 --topcycles 500 --nodes-geo project/data/geo/tracts.geojson
+
+# 4b–d) Structure-term regressions (κ, D, Γ)
+python3 -m project.src.cli pde_fit_kappa
+python3 -m project.src.cli pde_fit_diffusion
+python3 -m project.src.cli pde_fit_interface --knn 6
+```
+Outputs:
+- JSON diagnostics: `results/diagnostics/rot_summary.json`, `top_cycles.csv`, `pde_kappa.json`, `pde_diffusion.json`, `pde_interface.json`.
+- Figures (requires `matplotlib`): `fig_cycles_hotspots.png`, `fig_kappa_scatter.png`, `fig_diffusion_scatter.png`, `fig_interface_scatter.png`, alongside the original 3.
+- Acceptance checks: (i) η level & corridor list, (ii) κ significance, (iii) ΔR² for diffusion, (iv) Γ significance.
+
+<p align="center">
+  <img src="results/figures/fig_cycles_hotspots.png" width="520" alt="Loop hotspots (top |resid| edges)">
+  <br><em>Figure 4 — non‑reciprocal corridors (top‑K |resid| edges) anchored on tract centroids.</em>
+</p>
+
+<p align="center">
+  <img src="results/figures/fig_kappa_scatter.png" width="320" alt="κ fit scatter">
+  <img src="results/figures/fig_diffusion_scatter.png" width="320" alt="Diffusion fit scatter">
+  <img src="results/figures/fig_interface_scatter.png" width="320" alt="Interface fit scatter">
+  <br><em>Scatter diagnostics for κ (potential term), diffusion D, and interface Γ (requires matplotlib).</em>
+</p>
+
 Goal
 - Based on 2020 SEMCOG 7-county tract→tract OD snapshot (columns: `work,home,S000`), build a minimal, executable pipeline to diagnose "potential + non-reciprocity" structure and evaluate locality, and export reusable results (CSV/Parquet + figures).
 
@@ -57,23 +84,24 @@ Layout
 
 ```mermaid
 flowchart LR
-  A[Phase 0 数据就绪] --> B[Phase 1 PPML基线\nlog μ=α+β-λ·dist (+FE)]
-  B --> C[Phase 2 Hodge诊断\n拟合 π → R², η]
+  A[Phase 0 Data readiness] --> B[Phase 1 PPML baseline<br/>log mu = alpha + beta - lambda * dist (+FE)]
+  B --> C[Phase 2 Hodge diagnostics<br/>fit pi -> R2, eta]
   C --> D{Phase 3+}
-  D --> D1[局域性曲线 r*]
-  D --> D2[多势/反对称项]
-  D --> D3[外势 U(x) 回归]
+  D --> D1[Locality curves (r*)]
+  D --> D2[Multi-potential / Anti-symmetric]
+  D --> D3[External potential U(x)]
 ```
 
 ## Requirements
 - Python 3.8+.
-- No hard external deps. If `numpy`, `pandas`, `pyarrow`, or `matplotlib` are available, the pipeline will leverage them; otherwise it will degrade gracefully to CSV-only and simple plotting is skipped.
+- Baseline PPML (`baseline_glm`) **requires** `pandas`, `scikit-learn`, and (optionally) `statsmodels`. 缺任何一个库时命令会直接报错（不再自动 fallback），确保你在同一个 Python 环境安装好：`pip install pandas scikit-learn statsmodels patsy`.
+- 其它步骤在缺少 `numpy`/`pyarrow`/`matplotlib` 时仍会退化为 CSV-only（例如图像会跳过并提示需要安装 matplotlib）。
 
 ## Geo centroids
 - `data/geo/tracts.geojson` should include tract GEOIDs and either internal points or centroids:
   - GEOID keys accepted: `GEOID`, `GEOID10`, or `geoid`.
   - Lat/Lon keys accepted (preferred): `INTPTLAT10`, `INTPTLON10`, `centroid_lat`, `centroid_lon`.
-  - If none found, a naive centroid (bbox mid) is computed as a fallback.
+  - If none found, a naive centroid (bbox mid) is computed instead.
 
 ## Quickstart
 - Place your OD CSV at `data/raw/semcog_tract_od_intra_2020.csv` (columns: `work,home,S000`).
@@ -87,29 +115,39 @@ flowchart LR
 
 ## Data & artifacts
 
-| 路径 | 阶段 | 含义/关键字段 |
+| Path | Phase | Meaning / key fields |
 |---|---|---|
-| `data/raw/semcog_tract_od_intra_2020.csv` | Phase 0 | 原始 OD（`work, home, S000`） |
-| `data/geo/tracts.geojson` | Phase 0 | 质心（`GEOID, INTPTLAT/LON`） |
-| `data/processed/od_clean.parquet|csv` | Phase 0 | 过滤与标准化后的 OD |
+| `data/raw/semcog_tract_od_intra_2020.csv` | Phase 0 | Raw OD (`work, home, S000`) |
+| `data/geo/tracts.geojson` | Phase 0 | Centroids (`GEOID, INTPTLAT/LON`) |
+| `data/processed/od_clean.parquet|csv` | Phase 0 | Cleaned OD |
 | `data/processed/edges_with_distance.csv` | Phase 0 | OD + `distance_km` |
 | `data/processed/od_residual_glm.parquet|csv` | Phase 1 | `mu_hat, log_resid_glm` |
-| `results/diagnostics/baseline_glm_summary.json` | Phase 1 | PPML 收敛、距离系数 λ、deviance、backend |
-| `results/diagnostics/nodes_potential_glm.csv` | Phase 2 | 每 tract 的 π |
+| `results/diagnostics/baseline_glm_summary.json` | Phase 1 | PPML convergence, λ (distance), deviance, backend |
+| `results/diagnostics/nodes_potential_glm.csv` | Phase 2 | Potential π per tract |
 | `results/diagnostics/edges_decomp_glm.csv` | Phase 2 | `g_ij, pred=π_j-π_i, resid, weight` |
-| `results/diagnostics/locality_report.json` | Phase 2 | 局域性曲线数据（r0 vs R²） |
-| `results/figures/*.png` | Phase 2 | `r2_eta.png, pi_box_by_county.png, fig_locality_curve.png` |
+| `results/diagnostics/locality_report.json` | Phase 2 | Locality curve (r0 vs R²) |
+| `results/diagnostics/rot_summary.json` | Phase 2+ | Loop scale (η) + hotspot summary |
+| `results/diagnostics/top_cycles.csv` | Phase 2+ | Top triangular loops `(i,j,k,C_ijk)` |
+| `results/diagnostics/pde_kappa.json` | Phase 3 | κ fit summary (`kappa`, t stats, n_pairs) |
+| `results/diagnostics/pde_diffusion.json` | Phase 3 | Diffusion D fit summary |
+| `results/diagnostics/pde_interface.json` | Phase 3 | Interface Γ fit summary + adjacency size |
+| `results/figures/*.png` | Phase 2–3 | `r2_eta.png, pi_box_by_county.png, fig_locality_curve.png, fig_cycles_hotspots.png, fig_kappa_scatter.png, fig_diffusion_scatter.png, fig_interface_scatter.png` |
 
 ## Metrics & acceptance
 
 ### Metrics
 - R² (potential fit): fraction of directional signal explained by the potential (higher is better)
 - η (non‑reciprocity): fraction of one‑way/loop signal (lower is better)
+- κ (potential term coefficient): strength of $(\rho c \Delta\pi)$ in $\tilde N$, from `pde_kappa.json` (significant → retain potential term)
+- D (diffusion): coefficient on $-\Delta\rho$ in residuals (`pde_diffusion.json`, ΔR² shows incremental benefit)
+- Γ (interface): coefficient on $-\Delta(L\rho)$ (`pde_interface.json`; significant iff boundary curvature matters)
 
 ### Acceptance checklist
 - [ ] PPML converged; λ (distance) reasonable (often negative); `Σμ≈ΣF`
 - [ ] `nodes_potential_glm.csv` and `edges_decomp_glm.csv` generated
 - [ ] vs independent baseline: **R² ↑, η ↓** under the same sampling/weight settings
+- [ ] `rot_summary.json` reviewed (η level, hotspot corridors) and `top_cycles.csv` inspected
+- [ ] κ/D/Γ fits produce interpretable, significant coefficients or documented drop (JSONs + scatter plots)
 
 ## Glossary
 
@@ -143,9 +181,10 @@ flowchart LR
 ## Counties (SEMCOG 7)
 - Wayne(26163), Oakland(26125), Macomb(26099), Washtenaw(26161), Monroe(26115), Livingston(26093), St. Clair(26147).
 
-## Pipeline
-- 详细工作流与验收标准：`project/PIPELINE.md`
-- 阶段性结果总结与图表：`project/REPORT.md`
+## Pipeline & reports
+- Detailed workflow and acceptance: `project/PIPELINE.md`
+- Phase 0–2 results and figures: `project/REPORT.md`
+- Bilingual structure summaries: `project/docs_summary/en/structure_results.md`, `project/docs_summary/zh/structure_results.md`
 
 ## Troubleshooting
 <details><summary>⚠️ No figures?</summary>
@@ -183,5 +222,8 @@ project/
     figures/
   src/
     io.py  gravity.py  hodge.py  locality.py  features.py  export_figs.py  cli.py
+  docs_summary/
+    en/structure_results.md
+    zh/structure_results.md
   PIPELINE.md  REPORT.md  README.md
 ```

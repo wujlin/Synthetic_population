@@ -58,7 +58,7 @@ def residual_from_parquet(
         edges = [(w, h, int(s)) for w, h, s in df[["work", "home", "S000"]].itertuples(index=False, name=None)]
         T = int(df["S000"].sum())
     except Exception:
-        # CSV fallback
+        # CSV option
         import csv
         path_csv = in_parquet.rsplit('.',1)[0]+'.csv'
         with open(path_csv,'r',encoding='utf-8') as f:
@@ -96,6 +96,16 @@ def residual_from_parquet(
     return {"sumF": float(T), "sumE": float(sum(Es)), "valid_ratio": valid_ratio}
 
 
+def _norm_geoid(val: str) -> str:
+    """Return GEOID as 11-char string (best effort)."""
+    s = "".join(ch for ch in str(val) if ch.isdigit())
+    if len(s) >= 11:
+        return s[:11]
+    if s:
+        return s.zfill(11)
+    return str(val)
+
+
 def residual_glm_ppml(
     od_clean_path: str,
     edges_with_dist_path: str,
@@ -112,17 +122,11 @@ def residual_glm_ppml(
     """Fit PPML with origin/dest FE and distance (optionally county×county FE).
     Writes od_residual_glm with columns: work,home,S000,mu_hat,log_resid_glm,dist.
     Also writes a JSON log with lambda (distance coef), stderr/pvalue, and deviance.
-    If statsmodels is not available, falls back to independence baseline and notes fallback.
     """
     try:
         import pandas as pd  # type: ignore
-    except Exception:
-        # Fallback to independence baseline
-        base = residual_from_parquet(od_clean_path, out_path, eps=eps)
-        with open(log_path, 'w', encoding='utf-8') as f:
-            import json
-            json.dump({"fallback": "independence", **base}, f)
-        return {"fallback": 1.0}
+    except Exception as exc:  # pragma: no cover
+        raise RuntimeError("baseline_glm requires pandas; please install pandas before running PPML.") from exc
     # Load data
     if od_clean_path.endswith('.parquet'):
         df = pd.read_parquet(od_clean_path)
@@ -138,8 +142,11 @@ def residual_glm_ppml(
                 d = float(r.get('distance_km')) if r.get('distance_km') not in (None, '', 'None') else None
             except Exception:
                 d = None
-            dist_map[(r['work'], r['home'])] = d
-    df['dist'] = [dist_map.get((w,h), 0.0) for w,h in df[['work','home']].itertuples(index=False, name=None)]
+            key = (_norm_geoid(r.get('work', '')), _norm_geoid(r.get('home', '')))
+            dist_map[key] = d if d is not None else 0.0
+    work_str = df['work'].apply(_norm_geoid)
+    home_str = df['home'].apply(_norm_geoid)
+    df['dist'] = [dist_map.get((w, h), 0.0) for w, h in zip(work_str, home_str)]
     df['work_cty'] = df['work'].astype(str).str[:5]
     df['home_cty'] = df['home'].astype(str).str[:5]
     # Optional downsample for sanity/diagnostics
@@ -157,7 +164,7 @@ def residual_glm_ppml(
         except Exception:
             pass
     # Build design with FEs
-    # Helper to write fallback log
+    # Helper to write log payloads
     def _write_log(payload: Dict[str, object]):
         import json
         with open(log_path, 'w', encoding='utf-8') as f:
@@ -219,15 +226,10 @@ def residual_glm_ppml(
                 payload['dist_std'] = dist_std
             _write_log(payload)
             return {'n_obs': float(df.shape[0]), 'lambda': float(model.coef_[-1]) if hasattr(model, 'coef_') else float('nan')}
-        except Exception as e:
-            # Record reason and then base metrics
-            base = residual_from_parquet(od_clean_path, out_path, eps=eps)
-            base['backend'] = 'independence'
-            base['reason'] = f'sklearn_error: {type(e).__name__}: {str(e)}'
-            _write_log(base)
-            return {"fallback": 1.0}
+        except Exception as exc:
+            raise RuntimeError(f"sklearn backend failed: {type(exc).__name__}: {exc}") from exc
 
-    # Try statsmodels first; if memory error, fallback to sklearn sparse
+    # Try statsmodels first; if it fails, attempt sklearn sparse PPML
     try:
         import statsmodels.api as sm  # type: ignore
         import patsy  # type: ignore
@@ -264,7 +266,7 @@ def residual_glm_ppml(
             }, f)
         return {'n_obs': float(df.shape[0]), 'lambda': float(coef) if coef==coef else float('nan')}
     except Exception as e:
-        # Fallback to sklearn sparse PPML (PoissonRegressor)
+        # Attempt sklearn sparse PPML (PoissonRegressor)
         try:
             import numpy as np  # type: ignore
             from sklearn.preprocessing import OneHotEncoder  # type: ignore
@@ -326,10 +328,7 @@ def residual_glm_ppml(
             payload['standardize_dist'] = bool(standardize_dist)
             _write_log(payload)
             return {'n_obs': float(df.shape[0]), 'lambda': coef_dist}
-        except Exception:
-            # Final fallback
-            base = residual_from_parquet(od_clean_path, out_path, eps=eps)
-            base['backend'] = 'independence'
-            base['reason'] = f'final_fallback: {type(e).__name__}: {str(e)}'
-            _write_log(base)
-            return {"fallback": 1.0}
+        except Exception as inner_exc:
+            raise RuntimeError(
+                f"statsmodels backend failed ({type(e).__name__}: {e}) and the secondary sklearn backend also failed ({type(inner_exc).__name__}: {inner_exc})."
+            ) from inner_exc

@@ -227,7 +227,7 @@ def ingest_od(
         os.makedirs(os.path.dirname(out_parquet), exist_ok=True)
         df.to_parquet(out_parquet, index=False)
     except Exception:
-        # CSV fallback
+        # CSV alternative
         csv_out = out_parquet.rsplit('.', 1)[0] + ".csv"
         write_csv(csv_out, clean, header=["work", "home", "work_cty", "home_cty", "S000"])
         out_parquet = csv_out
@@ -359,7 +359,7 @@ def convert_shp_to_geojson(shp_path: str, out_geojson: str, geoid_fields: Option
             # pyshp doesn't directly label MULTIPOLYGON; treat multiple parts as polygon with multiple rings
             geom = {"type": "Polygon", "coordinates": [ring_to_coords(part) for part in sh.parts and [sh.points[i:j] for i, j in zip(sh.parts, list(sh.parts[1:]) + [None])] or [sh.points]]}
         else:
-            # fallback: envelope center only
+        # use envelope center only
             xs = [p[0] for p in sh.points]
             ys = [p[1] for p in sh.points]
             cx = (min(xs) + max(xs)) / 2 if xs else 0.0

@@ -7,6 +7,8 @@ from . import io as io_mod
 from . import hodge as hodge_mod
 from .locality import bin_by_distance, plot_locality_curve, run_locality_curve
 from .gravity import residual_from_parquet, residual_glm_ppml
+from .cycles import select_cycle_hotspots, approx_triangle_cycles, plot_cycle_hotspots
+from . import pde_fit
 import json
 
 
@@ -239,6 +241,139 @@ def cmd_potential(args: argparse.Namespace) -> None:
     print("Potential/Hodge outputs saved.")
 
 
+def cmd_rot_diagnostics(args: argparse.Namespace) -> None:
+    """Compute loop diagnostics (eta proxy, triangles) and render hotspot map."""
+    diag_dir = os.path.join("project", "results", "diagnostics")
+    figs_dir = os.path.join("project", "results", "figures")
+    edges_path = os.path.join(diag_dir, "edges_decomp_glm.csv")
+    if not os.path.exists(edges_path):
+        print("edges_decomp_glm.csv missing. Run potential_hodge_glm first.")
+        return
+    top_edges = select_cycle_hotspots(edges_path, k=args.topk, quantile=args.quantile)
+    os.makedirs(diag_dir, exist_ok=True)
+    out_top_edges = os.path.join(diag_dir, "edges_topk_glm.csv")
+    if hasattr(top_edges, "to_csv"):
+        top_edges.to_csv(out_top_edges, index=False)
+    else:
+        io_mod.write_csv(out_top_edges, top_edges, header=["u", "v", "strength", "dist_km"])
+    top_cycles = approx_triangle_cycles(edges_path, topcycles=args.topcycles)
+    out_top_cycles = os.path.join(diag_dir, "top_cycles.csv")
+    if hasattr(top_cycles, "to_csv"):
+        top_cycles.to_csv(out_top_cycles, index=False)
+    else:
+        io_mod.write_csv(out_top_cycles, top_cycles, header=["i", "j", "k", "C_ijk"])
+    eta_val = None
+    for cand in ("summary_robustness.json", "summary.json"):
+        cand_path = os.path.join(diag_dir, cand)
+        if os.path.exists(cand_path):
+            try:
+                with open(cand_path, "r", encoding="utf-8") as f:
+                    meta = json.load(f)
+                    eta_val = meta.get("eta")
+                break
+            except Exception:
+                continue
+    summary = {
+        "edges_decomp": edges_path,
+        "edges_hotspots": out_top_edges,
+        "top_cycles": out_top_cycles,
+        "topk": args.topk,
+        "topcycles": args.topcycles,
+        "quantile": args.quantile,
+        "eta_global": eta_val,
+    }
+    out_summary = os.path.join(diag_dir, "rot_summary.json")
+    with open(out_summary, "w", encoding="utf-8") as f:
+        json.dump(summary, f, indent=2)
+    fig_path = os.path.join(figs_dir, "fig_cycles_hotspots.png")
+    ok = plot_cycle_hotspots(top_edges, args.nodes_geo, fig_path)
+    if ok:
+        print("Cycle hotspot figure saved:", fig_path)
+    else:
+        print("Cycle hotspot data prepared; figure skipped due to missing deps.")
+
+
+def _resolve_processed(path_parquet: str):
+    if os.path.exists(path_parquet):
+        return path_parquet
+    if path_parquet.endswith(".parquet"):
+        csv_path = path_parquet.rsplit(".", 1)[0] + ".csv"
+        if os.path.exists(csv_path):
+            return csv_path
+    return path_parquet
+
+
+def cmd_pde_fit_kappa(args: argparse.Namespace) -> None:
+    residual_path = _resolve_processed(os.path.join("project", "data", "processed", "od_residual_glm.parquet"))
+    nodes_path = os.path.join("project", "results", "diagnostics", "nodes_potential_glm.csv")
+    if not os.path.exists(residual_path):
+        print("od_residual_glm missing. Run baseline_glm first.")
+        return
+    if not os.path.exists(nodes_path):
+        print("nodes_potential_glm.csv missing. Run potential_hodge_glm first.")
+        return
+    diag_dir = os.path.join("project", "results", "diagnostics")
+    figs_dir = os.path.join("project", "results", "figures")
+    out_json = os.path.join(diag_dir, "pde_kappa.json")
+    out_png = os.path.join(figs_dir, "fig_kappa_scatter.png")
+    try:
+        pde_fit.fit_kappa(
+            residual_path,
+            nodes_path,
+            args.rac,
+            out_json,
+            out_png,
+        )
+        print("Kappa diagnostics saved:", out_json)
+    except Exception as exc:
+        print(f"Kappa fit failed: {exc}")
+
+
+def cmd_pde_fit_diffusion(args: argparse.Namespace) -> None:
+    residual_edges = os.path.join("project", "results", "diagnostics", "edges_decomp_glm.csv")
+    if not os.path.exists(residual_edges):
+        print("edges_decomp_glm.csv missing. Run potential_hodge_glm first.")
+        return
+    diag_dir = os.path.join("project", "results", "diagnostics")
+    figs_dir = os.path.join("project", "results", "figures")
+    out_json = os.path.join(diag_dir, "pde_diffusion.json")
+    out_png = os.path.join(figs_dir, "fig_diffusion_scatter.png")
+    try:
+        pde_fit.fit_diffusion(
+            residual_edges,
+            args.rac,
+            out_json,
+            out_png,
+        )
+        print("Diffusion diagnostics saved:", out_json)
+    except Exception as exc:
+        print(f"Diffusion fit failed: {exc}")
+
+
+def cmd_pde_fit_interface(args: argparse.Namespace) -> None:
+    residual_edges = os.path.join("project", "results", "diagnostics", "edges_decomp_glm.csv")
+    if not os.path.exists(residual_edges):
+        print("edges_decomp_glm.csv missing. Run potential_hodge_glm first.")
+        return
+    diag_dir = os.path.join("project", "results", "diagnostics")
+    figs_dir = os.path.join("project", "results", "figures")
+    out_json = os.path.join(diag_dir, "pde_interface.json")
+    out_png = os.path.join(figs_dir, "fig_interface_scatter.png")
+    geo_path = args.tracts_geo or os.path.join("project", "data", "geo", "tracts.geojson")
+    try:
+        pde_fit.fit_interface(
+            residual_edges,
+            geo_path,
+            args.rac,
+            out_json,
+            out_png,
+            knn=args.knn,
+        )
+        print("Interface diagnostics saved:", out_json)
+    except Exception as exc:
+        print(f"Interface fit failed: {exc}")
+
+
 def cmd_locality_curve(args: argparse.Namespace) -> None:
     inp = os.path.join("project", "data", "processed", "od_residual.parquet")
     geom = os.path.join("project", "data", "processed", "edges_with_distance.csv")
@@ -345,6 +480,57 @@ def main():
     sp.add_argument("--tol", type=float, default=1e-6, help="CG tolerance")
     sp.set_defaults(func=cmd_hodge)
 
+    sp = sub.add_parser(
+        "rot_diagnostics",
+        help=(
+            "Loop diagnostics on edges_decomp_glm: select hotspot edges, top triangle cycles, "
+            "and render fig_cycles_hotspots.png."
+        ),
+    )
+    sp.add_argument("--topk", type=int, default=2000, help="Top-K edges ranked by |residual| to export")
+    sp.add_argument("--topcycles", type=int, default=500, help="Top triangle cycles (sorted by |C_ijk|)")
+    sp.add_argument(
+        "--nodes-geo",
+        type=str,
+        default=os.path.join("project", "data", "geo", "tracts.geojson"),
+        help="GeoJSON with GEOID centroids for hotspot plotting",
+    )
+    sp.add_argument(
+        "--quantile",
+        type=float,
+        default=0.99,
+        help="Quantile on |residual| before applying Top-K cap (controls hotspot tail)",
+    )
+    sp.set_defaults(func=cmd_rot_diagnostics)
+
+    sp = sub.add_parser(
+        "pde_fit_kappa",
+        help="Estimate kappa via WLS on paired flows: tilde N_ij ~ rho_ij + c_ij + c_ij*Delta pi",
+    )
+    sp.add_argument("--rac", type=str, default=None, help="Optional RAC density file (parquet/csv)")
+    sp.set_defaults(func=cmd_pde_fit_kappa)
+
+    sp = sub.add_parser(
+        "pde_fit_diffusion",
+        help="Estimate diffusion D by regressing residual skew on -Delta rho (after removing kappa).",
+    )
+    sp.add_argument("--rac", type=str, default=None, help="Optional RAC density file (parquet/csv)")
+    sp.set_defaults(func=cmd_pde_fit_diffusion)
+
+    sp = sub.add_parser(
+        "pde_fit_interface",
+        help="Estimate interface Gamma via Laplacian gradients: hat N_ij ~ -Gamma * Delta(L rho).",
+    )
+    sp.add_argument("--rac", type=str, default=None, help="Optional RAC density file (parquet/csv)")
+    sp.add_argument("--knn", type=int, default=6, help="k for centroid kNN adjacency when polygons unavailable")
+    sp.add_argument(
+        "--tracts-geo",
+        type=str,
+        default=os.path.join("project", "data", "geo", "tracts.geojson"),
+        help="GeoJSON with tract geometries/centroids for adjacency",
+    )
+    sp.set_defaults(func=cmd_pde_fit_interface)
+
     sp = sub.add_parser("locality", help="Distance-layered R²/energy curves")
     sp.add_argument("--bins", type=int, default=10, help="Number of distance bins")
     sp.set_defaults(func=cmd_locality)
@@ -363,7 +549,7 @@ def main():
     def cmd_baseline_glm(args: argparse.Namespace) -> None:
         inp = os.path.join("project", "data", "processed", "od_clean.parquet")
         if not (os.path.exists(inp)):
-            # fallback csv
+            # use CSV version if Parquet missing
             inp = os.path.join("project", "data", "processed", "od_clean.csv")
         edges_dist = os.path.join("project", "data", "processed", "edges_with_distance.csv")
         outp = os.path.join("project", "data", "processed", "od_residual_glm.parquet")
@@ -409,14 +595,22 @@ def main():
                 for w,h,s,lr,d,mu in df[["work","home","S000","log_resid_glm","dist","mu_hat"]].itertuples(index=False, name=None):
                     rows_ext.append((w,h,float(s),float(lr),float(d) if d==d else None,float(mu)))
             except Exception:
-                pass
+                csv_candidate = inp.rsplit('.', 1)[0] + '.csv'
+                if os.path.exists(csv_candidate):
+                    inp = csv_candidate
+                rows_ext = []
         if not rows_ext:
-            with open(inp, 'r', encoding='utf-8') as f:
+            with open(inp, 'r', encoding='utf-8', errors='ignore') as f:
                 rdr = _csv.DictReader(f)
                 for r in rdr:
+                    w = r.get('work') or r.get('WORK')
+                    h = r.get('home') or r.get('HOME')
+                    s = r.get('S000') or r.get('s000')
+                    if not w or not h or s in (None, ''):
+                        continue
                     d = r.get('dist'); mu = r.get('mu_hat');
                     lr = r.get('log_resid_glm') if 'log_resid_glm' in r else r.get('log_resid')
-                    rows_ext.append((r['work'], r['home'], float(r['S000']), float(lr), float(d) if d not in (None,'','None') else None, float(mu) if mu not in (None,'','None') else None))
+                    rows_ext.append((w, h, float(s), float(lr), float(d) if d not in (None,'','None') else None, float(mu) if mu not in (None,'','None') else None))
         from .hodge import run_hodge_from_residual_robust
         phi, summary, diags, topk = run_hodge_from_residual_robust(
             rows_ext,

@@ -340,7 +340,7 @@ def run_hodge_from_residual_robust(
         elif weight_type == 'mu':
             w_edge = MU.get((u,v),0.0) + MU.get((v,u),0.0)
         elif weight_type == 'eij':
-            # fallback to sum if not provided; caller can override by precomputing
+            # default to sum if not provided; caller can override by precomputing
             w_edge = w_sum
         else:
             w_edge = w_sum

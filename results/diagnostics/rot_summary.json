@@ -1,0 +1,9 @@
+{
+  "edges_decomp": "project\\results\\diagnostics\\edges_decomp_glm.csv",
+  "edges_hotspots": "project\\results\\diagnostics\\edges_topk_glm.csv",
+  "top_cycles": "project\\results\\diagnostics\\top_cycles.csv",
+  "topk": 2000,
+  "topcycles": 500,
+  "quantile": 0.99,
+  "eta_global": 0.9348897170954795
+}

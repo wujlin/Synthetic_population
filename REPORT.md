@@ -33,16 +33,21 @@ Glossary
 
 ## Key Results
 
+- PPML baseline (Phase 1, sklearn PoissonRegressor with standardized distance)
+  - Observations: 496,096
+  - λ_dist ≈ **−0.94** (dist mean ≈28.9 km, std ≈19.9 km), backend=`sklearn`
+  - Source: `project/results/diagnostics/baseline_glm_summary.json`
+
 - Independent-baseline Hodge (full, top-150k undirected edges)
   - Nodes: 1475, Edges: 150000
   - R² (potential fraction): 0.1936
   - η (non-reciprocity): 0.8982
-  - Source: project/results/diagnostics/summary.json
+  - Source: `project/results/diagnostics/summary.json`
 
-- Robust Hodge (GLM residual path with sampling/weights; current backend fell back to independence residuals)
+- Robust Hodge (GLM residual path with sampling/weights)
   - Settings: weight-type=cap, τ=200, drop-self, stratified sample=120000, bins_dist=8, bins_weight=8, seed=42
-  - R²: 0.1686, η: 0.9126, Edges: 120000
-  - Source: project/results/diagnostics/summary_robustness.json
+  - R²: **0.108**, η: **0.935**, Edges used: 113,011
+  - Source: `project/results/diagnostics/summary_robustness.json`
 
 ## Figures
 
@@ -95,13 +100,37 @@ Locality points (r0 km → R², edges):
 - π gradients are meaningful: residual flows tend to go from lower‑π to higher‑π; we can later explain π using place features (access, amenities, income, etc.).
 - Locality matters: short trips (≤15 km) are more “downhill‑like” (R²≈0.38–0.58); longer trips reduce R², indicating stronger route/corridor effects.
 
+## From diagnostics to PDE (Structure-aware results)
+
+Loop diagnostics (rotational term):
+
+<p align="center">
+  <img src="results/figures/fig_cycles_hotspots.png" width="520" alt="Cycle hotspots (top |resid| edges)">
+  <br><em>Top 2k |resid| edges concentrate on Detroit–Ann Arbor and lakeshore corridors (η≈0.913, see `rot_summary.json`).</em>
+</p>
+
+Structure-term regressions (figures require matplotlib; JSON values already produced):
+
+<p align="center">
+  <img src="results/figures/fig_kappa_scatter.png" width="320" alt="κ scatter">
+  <img src="results/figures/fig_diffusion_scatter.png" width="320" alt="Diffusion scatter">
+  <img src="results/figures/fig_interface_scatter.png" width="320" alt="Interface scatter">
+</p>
+
+- **κ (potential term)** — `pde_kappa.json`: κ ≈ **−0.80** (t ≈ −105, `n_pairs ≈ 150k`, `R² ≈ 0.069`). Strong evidence to retain κ in the minimal PDE.
+- **Diffusion D** — `pde_diffusion.json`: D ≈ `3.2×10⁻¹²` with ΔR² ≈ `6.1×10⁻⁴` (t ≈ `2.1×10⁻⁵`). Diffusion uplift is negligible at current resolution.
+- **Interface Γ** — `pde_interface.json`: Γ ≈ `3.9×10⁻¹²` with ΔR² ≈ `6.1×10⁻⁴` (t ≈ `2.3×10⁻⁵`). Boundary curvature contributes ~0 at this stage.
+
+**Minimal PDE structure**: retain `{potential κ, loop term η}`; diffusion and interface terms are not statistically distinguishable from zero on this dataset (documented in their JSONs). Future work can revisit D and Γ with denser RAC data or richer adjacency.
+
 ## Reproducible Outputs (selected)
 
 - Hodge global metrics: project/results/diagnostics/summary.json
 - Edge diagnostics: project/results/diagnostics/edge_hodge_metrics.csv
 - Node potential: project/results/diagnostics/node_potential.csv
 - Locality report: project/results/diagnostics/locality_report.json
-- Figures: results/figures/pi_box_by_county.png, results/figures/r2_eta.png, results/figures/fig_locality_curve.png
+- Loop + PDE diagnostics: `rot_summary.json`, `top_cycles.csv`, `pde_kappa.json`, `pde_diffusion.json`, `pde_interface.json`
+- Figures: results/figures/pi_box_by_county.png, results/figures/r2_eta.png, results/figures/fig_locality_curve.png, `fig_cycles_hotspots.png`, `fig_kappa_scatter.png`, `fig_diffusion_scatter.png`, `fig_interface_scatter.png`
 
 ## Notes on PPML Baseline
 

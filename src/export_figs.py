@@ -2,6 +2,10 @@ import os
 import json
 from collections import defaultdict
 
+from .cycles import select_cycle_hotspots, plot_cycle_hotspots
+from . import pde_fit
+from . import io as io_mod
+
 
 def _try_import_matplotlib():
     try:
@@ -110,6 +114,99 @@ def plot_locality_curve(diag_dir: str, figs_dir: str) -> bool:
     return True
 
 
+def plot_cycle_hotspots_fig(
+    diag_dir: str,
+    figs_dir: str,
+    nodes_geo: str = os.path.join("project", "data", "geo", "tracts.geojson"),
+    topk: int = 2000,
+):
+    edges_path = os.path.join(diag_dir, "edges_decomp_glm.csv")
+    if not os.path.exists(edges_path):
+        return False
+    try:
+        top_edges = select_cycle_hotspots(edges_path, k=topk)
+    except Exception as exc:
+        print(f"Cycle hotspot selection failed: {exc}")
+        return False
+    out_topk = os.path.join(diag_dir, "edges_topk_glm.csv")
+    try:
+        if hasattr(top_edges, "to_csv"):
+            top_edges.to_csv(out_topk, index=False)
+        else:
+            io_mod.write_csv(out_topk, top_edges, header=["u", "v", "strength", "dist_km"])
+    except Exception:
+        pass
+    fig_path = os.path.join(figs_dir, "fig_cycles_hotspots.png")
+    return plot_cycle_hotspots(top_edges, nodes_geo, fig_path)
+
+
+def _try_plot_kappa(diag_dir: str, figs_dir: str):
+    json_path = os.path.join(diag_dir, "pde_kappa.json")
+    if not os.path.exists(json_path):
+        return False
+    residual = os.path.join("project", "data", "processed", "od_residual_glm.parquet")
+    nodes = os.path.join(diag_dir, "nodes_potential_glm.csv")
+    residual_csv = os.path.splitext(residual)[0] + ".csv"
+    residual_avail = os.path.exists(residual) or os.path.exists(residual_csv)
+    if not os.path.exists(nodes) or not residual_avail:
+        return False
+    out_png = os.path.join(figs_dir, "fig_kappa_scatter.png")
+    try:
+        pde_fit.fit_kappa(
+            residual,
+            nodes,
+            None,
+            json_path,
+            out_png,
+        )
+        return os.path.exists(out_png)
+    except Exception as exc:
+        print(f"Kappa scatter skipped: {exc}")
+        return False
+
+
+def _try_plot_diffusion(diag_dir: str, figs_dir: str):
+    json_path = os.path.join(diag_dir, "pde_diffusion.json")
+    if not os.path.exists(json_path):
+        return False
+    residual_edges = os.path.join(diag_dir, "edges_decomp_glm.csv")
+    if not os.path.exists(residual_edges):
+        return False
+    out_png = os.path.join(figs_dir, "fig_diffusion_scatter.png")
+    try:
+        pde_fit.fit_diffusion(
+            residual_edges,
+            None,
+            json_path,
+            out_png,
+        )
+        return os.path.exists(out_png)
+    except Exception as exc:
+        print(f"Diffusion scatter skipped: {exc}")
+        return False
+
+
+def _try_plot_interface(diag_dir: str, figs_dir: str):
+    json_path = os.path.join(diag_dir, "pde_interface.json")
+    residual_edges = os.path.join(diag_dir, "edges_decomp_glm.csv")
+    geo_path = os.path.join("project", "data", "geo", "tracts.geojson")
+    if not os.path.exists(json_path) or not os.path.exists(residual_edges) or not os.path.exists(geo_path):
+        return False
+    out_png = os.path.join(figs_dir, "fig_interface_scatter.png")
+    try:
+        pde_fit.fit_interface(
+            residual_edges,
+            geo_path,
+            None,
+            json_path,
+            out_png,
+        )
+        return os.path.exists(out_png)
+    except Exception as exc:
+        print(f"Interface scatter skipped: {exc}")
+        return False
+
+
 def export_all(
     diagnostics_dir: str = os.path.join("project", "results", "diagnostics"),
     figures_dir: str = os.path.join("project", "results", "figures"),
@@ -124,6 +221,13 @@ def export_all(
         "pi_box_by_county": plot_potential_box(diagnostics_dir, figures_dir),
         "r2_eta": plot_r2_eta(diagnostics_dir, figures_dir),
         "locality_curve": plot_locality_curve(diagnostics_dir, figures_dir),
+        "cycle_hotspots": plot_cycle_hotspots_fig(diagnostics_dir, figures_dir),
     }
+    out.update(
+        {
+            "kappa_scatter": _try_plot_kappa(diagnostics_dir, figures_dir),
+            "diffusion_scatter": _try_plot_diffusion(diagnostics_dir, figures_dir),
+            "interface_scatter": _try_plot_interface(diagnostics_dir, figures_dir),
+        }
+    )
     return out
-

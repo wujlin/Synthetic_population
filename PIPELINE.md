@@ -2,38 +2,42 @@ Pipeline: SEMCOG 2020 OD Diagnostics
 
 ## Three‑figure logic (at a glance)
 
-- R²/η 柱图
+- R²/η bars
   - Observation: After independence baseline, R²≈0.194, η≈0.898.
   - Meaning: A single potential explains ~19% of directions; ~80% comes from loops/non‑reciprocity.
   - Implication: Move toward multi‑potential or potential + anti‑symmetric edge terms.
 
-- 位势箱线图
+- Potential (π) boxplots
   - Observation: County‑level π differs systematically (e.g., Livingston/Washtenaw/St. Clair higher; Oakland/Macomb/Monroe/Wayne lower).
   - Reading: g_ij≈π_j−π_i; low‑π→high‑π aligns with net attraction (after scale effect removal).
   - Implication: π is a target for interpretable external‑feature regression U(x) (access, POIs, housing/income, etc.).
 
-- 局域性曲线
+- Locality curve
   - Observation: R²≈0.58→0.38 for 5–15 km; adding longer links reduces R² ≈ 0.22.
   - Meaning: Short distances are more potential‑like; medium/long distances show stronger non‑reciprocity.
   - Implication: Baseline must remove distance/time friction; multi‑potential or anti‑symmetric terms should focus on medium/long distances.
+- Loop hotspots (new 4th visual)
+  - Observation: Top |resid| corridors link SEMCOG sub-centers (tri-county ↔ Washtenaw/St. Clair).
+  - Meaning: η mass is spatially clustered; supports “retain anti-symmetric term” decision.
+  - Implication: Use `rot_diagnostics` before adding PDE regressions; treat highlighted corridors separately.
 
 Overall: Short‑distance ≈ potential‑like; medium/long‑distance ≈ loop‑dominated. Actions: PPML baseline → robust Hodge → multi‑potential/anti‑symmetric modeling → U(x) regression.
 
-## 流程图
+## Workflow
 
 ```mermaid
 flowchart LR
-  A[Phase 0 数据就绪] --> B[Phase 1 PPML基线\nlog μ=α+β-λ·dist (+FE)]
-  B --> C[Phase 2 Hodge诊断\n拟合 π → R², η]
+  A[Phase 0 Data readiness] --> B[Phase 1 PPML baseline<br/>log mu = alpha + beta - lambda * dist (+FE)]
+  B --> C[Phase 2 Hodge diagnostics<br/>fit pi -> R2, eta]
   C --> D{Phase 3+}
-  D --> D1[局域性曲线 r*]
-  D --> D2[多势/反对称项]
-  D --> D3[外势 U(x) 回归]
+  D --> D1[Locality curves (r*)]
+  D --> D2[Multi-potential / Anti-symmetric]
+  D --> D3[External potential U(x)]
 ```
 
-## 完整可执行 Pipeline（目的→要做→产物/验收）
+## End‑to‑end pipeline (purpose → steps → outputs/acceptance)
 
-- 环境建议
+- Environment
   - conda create -n semcog-od python=3.10 -y && conda activate semcog-od
   - conda install -c conda-forge numpy pandas scipy matplotlib statsmodels patsy pyarrow pyshp scikit-learn -y
 
@@ -59,13 +63,15 @@ flowchart LR
 python -m project.src.cli baseline_glm --backend sklearn --eps 0.5 \
   --max-iter 5000 --alpha 1e-8 --standardize-dist [--county-pair-fe]
 ```
-Definition: `log μ_ij = α_i + β_j − λ·dist_ij [+ county×county FE]`; `log_resid_glm = log((F_ij+ε)/(μ_ij+ε))`.
+Definition: $\log \mu_{ij} = \alpha_i + \beta_j - \lambda\cdot \mathrm{dist}_{ij}$ (optionally with county‑by‑county FE); $\;\log\_\mathrm{resid\_glm} = \log\tfrac{F\_{ij}+\epsilon}{\hat\mu\_{ij}+\epsilon}$.
 
 **Outputs**: `data/processed/od_residual_glm.parquet|csv` (`mu_hat, log_resid_glm`), `results/diagnostics/baseline_glm_summary.json` (λ, deviance, backend).
 
+**Latest run**: λ_dist ≈ **−0.94** (`backend=sklearn`, `standardize_dist=True`, no county×county FE), `dist_mean ≈ 28.88 km`, `dist_std ≈ 19.92 km`.
+
 **Acceptance**: vs independent baseline, downstream Hodge shows **R² ↑, η ↓**.
 
-### Phase 2 — Robust Hodge: potential/non‑reciprocity
+### Phase 2 — Robust Hodge: potential/non-reciprocity
 **Purpose**: Make conclusions robust to sampling/numerics/weights.
 
 **Process**:
@@ -78,43 +84,70 @@ Notes: stratified sampling (`dist×(F_ij+F_ji)`), component‑wise anchoring (sp
 
 **Outputs**: `results/diagnostics/nodes_potential_glm.csv`, `edges_decomp_glm.csv`, `edges_topk_glm.csv`, `summary_robustness.json`.
 
+**Latest run**: `R² ≈ 0.108`, `η ≈ 0.935`, 1475 nodes / 113,011 edges（`summary_robustness.json`）。
+
 **Acceptance**: conclusions stable under settings; reasonable variance in R²/η; Top‑K residual edges for inspection.
 
-- Phase 3｜局域性两条曲线（口径统一）
-  - 目的：区分“短距更好解释”与“训练子集效应”。
-  - 动作：
-    - 曲线 A（已实现）：在 dist ≤ r0 子集上训练并评估：python -m project.src.cli locality_curve --radii 5 10 15 20 25 30 40 50
-    - 曲线 B（建议新增）：基于全量训练的 π，仅在 dist ≤ r0 上评估（保证单调不降）。
-    - 计算半能量半径 r*（R²≥0.5 的最小 r0）与 CI（重复抽样）。
-  - 产物：results/diagnostics/locality_report.json + results/figures/fig_locality_curve.png。
-  - 验收：曲线 B 单调不降；曲线 A 高于 B；给出 r* 与 CI。
+### From diagnostics to PDE (4 visuals + 4 analyses)
 
-- Phase 4｜闭环结构刻画（让 η 有地理形状）
-  - 目的：把“非互易”结构化成可解释的回路/走廊。
-  - 动作：在 edges_decomp_glm 上近似三元环强度 C_ijk=g_ij+g_jk+g_ki；输出 Top-K 回路清单与热区图（后续命令可加）。
-  - 产物：results/diagnostics/top_cycles.csv、results/figures/fig_cycles_hotspots.png。
-  - 验收：主回路与跨县/中长距走廊直觉一致。
+Once Phase 2 artifacts exist, run the structure-first suite to quantify each PDE term and add the fourth visual (cycle hotspots).
 
-- Phase 5｜多势场 / 势+反对称（两条路线二选一）
-  - 路线 5A（多势）：NMF/谱聚类得到 K 个子网络；对子网络做 PPML→Hodge→π^(k)；组合 log F_ij = α_i + β_j − λ d_ij + log Σ_k w_k exp(π^(k)(j) − π^(k)(i))；留出集验证 ΔR²/ΔLL。
-  - 路线 5B（势+反对称边项）：log F_ij = α_i + β_j − λ d_ij + [π(j)−π(i)] + A_ij（A_ij=-A_ji）；设计反对称特征；拟合 A_ij；留出集验证。
-  - 产物：multi_potential_nmf/* 或 antisym_edge_model/*。
-  - 验收：留出集相对“单势+距离”显著提升；特征方向与地理直觉一致。
+| Structure item | Goal / definition | CLI command | Diagnostics / figures | Acceptance |
+|---|---|---|---|---|
+| Loops / η(r) | Map non-reciprocity corridors; `C_{ijk}=g_{ij}+g_{jk}+g_{ki}` | `python3 -m project.src.cli rot_diagnostics --topk 2000 --topcycles 500` | `rot_summary.json`, `top_cycles.csv`, `fig_cycles_hotspots.png` | η level reported; corridors match geography |
+| Potential term κ | $\tilde N_{ij}=(F_{ij}-F_{ji})-(\mu_{ij}-\mu_{ji})\sim \rho_{ij},c_{ij},c_{ij}\Delta\pi_{ij}$ | `python3 -m project.src.cli pde_fit_kappa` | `pde_kappa.json`, `fig_kappa_scatter.png` | κ significant (t-value) or documented as negligible |
+| Diffusion term D | Residual gradient $\hat N_{ij}\sim -D(\rho_j-\rho_i)$ | `python3 -m project.src.cli pde_fit_diffusion` | `pde_diffusion.json`, `fig_diffusion_scatter.png` | ΔR² > 0 or term dropped |
+| Interface term Γ | Boundary curvature $\hat N^{(after D)}_{ij}\sim -\Gamma(\nabla^2\rho_j-\nabla^2\rho_i)$ | `python3 -m project.src.cli pde_fit_interface --knn 6` | `pde_interface.json`, `fig_interface_scatter.png` | Γ significant or justified as 0 |
 
-- Phase 6｜外势 U(x) 可解释回归（节点级）
-  - 目的：把 π（或 π^(k)）解释为可操作外部因子。
-  - 动作：线性/岭/GAM（优先可解释），必要时轻量 MLP 作对照；交叉验证；输出系数/SHAP 与位势地图。
-  - 产物：u_regression/*、results/figures/fig_U_maps.png。
-  - 验收：解释度达标；空间分布与系数方向合理；可做情景推演。
+**Latest metrics (SEMCOG 2020 run)**  
+κ ≈ **−0.80** (t ≈ −105, `R² ≈ 0.069`), diffusion D ≈ `3.2e-12` (ΔR² `~6e-4`), interface Γ ≈ `3.9e-12` (ΔR² `~6e-4`) — retain κ, document D/Γ as negligible.
 
-- Phase 7｜报告与可视化
-  - 目的：统一输出与复现。
-  - 动作：python -m project.src.cli export_figs（需 matplotlib）；补 REPORT.md 记录参数与验收表。
-  - 产物：results/figures/*、REPORT.md。
-  - 验收：一键重跑可复现；图表与 JSON 指标一致。
+Flow (Phase 2 → structure terms):
 
-**关键验收口径**
+```mermaid
+flowchart LR
+  H[PPML residuals] --> R[Robust Hodge<br/>(π, g, η)]
+  R --> C[Cycle diagnostics<br/>(rot_diagnostics)]
+  C --> Kappa[pde_fit_kappa]
+  Kappa --> Diff[pde_fit_diffusion]
+  Diff --> Interface[pde_fit_interface]
+```
 
-- 基线：独立→PPML 后，R² 上升、η 下降（同抽样/权重设置）。
-- 局域性：曲线 B 单调不降；给出半能量半径 r* 与 CI。
-- 建模（5A/5B）：留出边相对“单势+距离”有显著提升（ΔR² 或 ΔLL），且解释项方向合理。
+- Phase 3 — Locality (two curves, unified criteria)
+  - Purpose: Separate “short‑distance advantage” from “subset training effect”.
+  - Actions:
+    - Curve A (implemented): train+evaluate on `dist ≤ r0`: `python -m project.src.cli locality_curve --radii 5 10 15 20 25 30 40 50`
+    - Curve B (suggested): evaluate only with a globally trained π (ensure monotone non‑decreasing).
+    - Report half‑energy radius r* (minimum r0 with R²≥0.5) with CI (repeated sampling).
+  - Outputs: `results/diagnostics/locality_report.json` + `results/figures/fig_locality_curve.png`
+  - Acceptance: Curve B monotone non‑decreasing; Curve A above B; report r* and CI.
+
+- Phase 4 — Loop structure (make η spatial)
+  - Purpose: Turn non‑reciprocity into interpretable cycles/corridors.
+  - Actions: approximate triangle strength $C\_{ijk}=g\_{ij}+g\_{jk}+g\_{ki}$ on `edges_decomp_glm`; export Top‑K cycles and hotspots.
+  - Outputs: `results/diagnostics/top_cycles.csv`, `results/figures/fig_cycles_hotspots.png`.
+  - Acceptance: Main cycles align with inter‑county / medium‑long corridors.
+
+- Phase 5 — Multi‑potential / potential + anti‑symmetric (choose one to start)
+  - Route 5A (multi‑potential): cluster (NMF/spectral) into K subnetworks; per subnet: PPML→Hodge→$\pi^{(k)}$; combine $\log F\_{ij}=\alpha\_i+\beta\_j-\lambda d\_{ij}+\log\sum\_k w\_k e^{\pi^{(k)}(j)-\pi^{(k)}(i)}$; validate on held‑out edges.
+  - Route 5B (potential + anti‑symmetric edge term): $\log F\_{ij}=\alpha\_i+\beta\_j-\lambda d\_{ij}+[\pi(j)-\pi(i)]+A\_{ij}$ with $A\_{ij}=-A\_{ji}$; design anti‑symmetric features; fit $A\_{ij}$; validate on held‑out edges.
+  - Outputs: `multi_potential_nmf/*` or `antisym_edge_model/*`.
+  - Acceptance: Significant uplift vs "single potential + distance" on held‑out; directions match spatial intuition.
+
+- Phase 6 — External potential $U(x)$ (node‑level, interpretable)
+  - Purpose: explain $\pi$ (or $\pi^{(k)}$) by actionable factors.
+  - Actions: linear/ridge/GAM (interpretable; small MLP as baseline); cross‑validation; coefficients/SHAP + potential maps.
+  - Outputs: `u_regression/*`, `results/figures/fig_U_maps.png`.
+  - Acceptance: adequate fit; spatial patterns and signs reasonable; scenario analysis feasible.
+
+- Phase 7 — Report & visualization
+  - Purpose: unify outputs and reproducibility.
+  - Actions: `python -m project.src.cli export_figs` (needs matplotlib); `REPORT.md` collects parameters and acceptance.
+  - Outputs: `results/figures/*`, `REPORT.md`.
+  - Acceptance: one‑click reruns reproduce; figures match JSON metrics.
+
+**Acceptance focus**
+
+- Baseline: vs independence, R² up and η down under identical sampling/weights.
+- Locality: Curve B monotone; report half‑energy radius r* with CI.
+- Modeling (5A/5B): held‑out uplift over "single potential + distance"; interpretable signs.

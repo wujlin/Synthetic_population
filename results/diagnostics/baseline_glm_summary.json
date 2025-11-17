@@ -1,1 +1,1 @@
-{"n_obs": 100000, "use_county_pair_fe": false, "lambda_dist": 0.0, "deviance": 291897.2301895589, "backend": "sklearn", "max_iter": 5000, "alpha": 1e-08, "standardize_dist": true, "dist_mean": 0.0, "dist_std": 1.0}
+{"n_obs": 496096, "use_county_pair_fe": false, "lambda_dist": -0.941893914147376, "deviance": 735011.5691146902, "backend": "sklearn", "max_iter": 10000, "alpha": 1e-10, "standardize_dist": true, "dist_mean": 28.880663970810406, "dist_std": 19.91549465447634}
