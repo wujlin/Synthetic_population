@@ -136,18 +136,18 @@ flowchart LR
 ## Metrics & acceptance
 
 ### Metrics
-- R² (potential fit): fraction of directional signal explained by the potential (higher is better)
-- η (non‑reciprocity): fraction of one‑way/loop signal (lower is better)
-- κ (potential term coefficient): strength of $(\rho c \Delta\pi)$ in $\tilde N$, from `pde_kappa.json` (significant → retain potential term)
-- D (diffusion): coefficient on $-\Delta\rho$ in residuals (`pde_diffusion.json`, ΔR² shows incremental benefit)
-- Γ (interface): coefficient on $-\Delta(L\rho)$ (`pde_interface.json`; significant iff boundary curvature matters)
+- $R^2$（潜能解释度）：潜能解释的方向信号占比（越高越好）。
+- $\eta$（非互易性）：循环/单向信号占比（越低越好）。
+- $\kappa$（势项系数）：$\tilde N_{ij}$ 中 $(\rho_{ij} c_{ij} \Delta\pi_{ij})$ 对应的加权回归系数，见 `pde_kappa.json`。
+- $D$（扩散项）：残差与 $-\Delta\rho$ 的系数，见 `pde_diffusion.json`（使用 $\Delta R^2$ 判断增益）。
+- $\Gamma$（界面项）：残差与 $-\Delta(L\rho)$ 的系数，见 `pde_interface.json`（仅在边界曲率显著时保留）。
 
 ### Acceptance checklist
-- [ ] PPML converged; λ (distance) reasonable (often negative); `Σμ≈ΣF`
-- [ ] `nodes_potential_glm.csv` and `edges_decomp_glm.csv` generated
-- [ ] vs independent baseline: **R² ↑, η ↓** under the same sampling/weight settings
-- [ ] `rot_summary.json` reviewed (η level, hotspot corridors) and `top_cycles.csv` inspected
-- [ ] κ/D/Γ fits produce interpretable, significant coefficients or documented drop (JSONs + scatter plots)
+- [ ] PPML 收敛：距离系数 $ \lambda_{dist} < 0 $，并且 $\sum \mu \approx \sum F$
+- [ ] `nodes_potential_glm.csv` 与 `edges_decomp_glm.csv` 已生成
+- [ ] 相较独立基线：**$R^2$ 上升、$\eta$ 下降**（同样的采样/权重设置）
+- [ ] `rot_summary.json`（η、热点走廊）与 `top_cycles.csv` 已检查
+- [ ] κ / D / Γ 的拟合结果（JSON + 散点图）已经复核：显著则保留，不显著则记录为 0
 
 ## Glossary
 
