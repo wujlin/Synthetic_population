@@ -457,7 +457,7 @@ def cmd_export_figs(args: argparse.Namespace) -> None:
         print('Skipped (missing matplotlib or data):', ', '.join(skipped))
 
 
-def main():
+def _legacy_main(argv=None):
     p = argparse.ArgumentParser(description="SEMCOG OD diagnostics pipeline")
     sub = p.add_subparsers(dest="cmd")
 
@@ -685,12 +685,40 @@ def main():
         cmd_locality(args)
     sp.set_defaults(func=run_all)
 
-    args = p.parse_args()
+    if argv is None:
+        import sys as _sys
+        argv = _sys.argv[1:]
+    args = p.parse_args(argv)
     if not hasattr(args, "func"):
         p.print_help()
         return
     io_mod.ensure_dirs()
     args.func(args)
+def main(argv: Optional[list[str]] = None):
+    """Router entry point.
+
+    - `python -m project.src.cli edge ...`  → edge-line CLI
+    - `python -m project.src.cli node ...`  → node-line CLI
+    - `python -m project.src.cli baseline_glm ...` (etc.) keeps working.
+    """
+    import sys
+
+    if argv is None:
+        argv = sys.argv[1:]
+
+    if argv and argv[0] == "edge":
+        from .edge.cli_edge import main as edge_main
+
+        edge_main(argv[1:])
+        return
+    if argv and argv[0] == "node":
+        from .node.cli_node import main as node_main
+
+        node_main(argv[1:])
+        return
+
+    # Fallback to legacy flat CLI
+    _legacy_main(argv)
 
 
 if __name__ == "__main__":

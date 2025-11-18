@@ -240,16 +240,23 @@ def _plot_scatter_generic(
         print(f"matplotlib unavailable; skip figure {os.path.basename(out_path)}.")
         return False
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
-    plt.figure(figsize=(5.5, 4.0))
-    plt.scatter(x_vals, y_vals, s=6, alpha=0.3, label="observed", color="#4c72b0")
-    plt.scatter(x_vals, preds, s=8, alpha=0.8, label="fitted", color="#dd8452")
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.title(title)
-    plt.legend(frameon=False)
-    plt.tight_layout()
-    plt.savefig(out_path, dpi=150)
-    plt.close()
+    fig, ax = plt.subplots(figsize=(5.5, 4.0))
+    # Scatter of observed values
+    ax.scatter(x_vals, y_vals, s=6, alpha=0.3, color="#1f77b4", label="observed")
+    # Regression line from fitted values
+    try:
+        if preds:
+            pairs = sorted(zip(x_vals, preds), key=lambda t: t[0])
+            xs_line, ys_line = zip(*pairs)
+            ax.plot(xs_line, ys_line, color="#ff7f0e", linewidth=2.0, label="fitted")
+    except Exception:
+        pass
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.legend(frameon=False)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150)
+    plt.close(fig)
     return True
 
 
@@ -366,8 +373,8 @@ def fit_kappa(
         preds,
         out_png,
         "Kappa fit diagnostics",
-        "rho*c*Delta pi (proxy)",
-        "tilde N_ij",
+        r"$\rho c\,\Delta\pi$ (proxy)",
+        r"$\tilde{N}_{ij}$",
     )
 
 
@@ -493,8 +500,8 @@ def fit_diffusion(
         preds,
         out_png,
         "Diffusion fit diagnostics",
-        "-Delta rho_ij",
-        "hat N_ij (after kappa)",
+        r"$-\Delta\rho_{ij}$",
+        r"$\hat{N}_{ij}$ (after $\kappa$)",
     )
 
 
@@ -559,8 +566,8 @@ def fit_interface(
         preds,
         out_png,
         "Interface fit diagnostics",
-        "-Delta(L rho)_ij",
-        "hat N_ij (after diffusion)",
+        r"$-\Delta(L\rho)_{ij}$",
+        r"$\hat{N}_{ij}$ (after diffusion)",
     )
 def _normalize_geoid(val: Union[str, float, int]) -> str:
     s = "".join(ch for ch in str(val) if ch.isdigit())

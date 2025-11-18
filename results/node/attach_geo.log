@@ -1,0 +1,199 @@
+[attach_geo] start: in_parquet=project/data/node/panel_node.parquet, tracts_geojson=project/data/geo/tracts.geojson, out_parquet=project/data/node/panel_node_geo.parquet
+[attach_geo] Loading centroids from project/data/geo/tracts.geojson...
+[attach_geo] Loaded 3017 centroid(s).
+[attach_geo] ERROR while loading table: No module named 'pandas'
+[attach_geo] start: in_parquet=project/data/node/panel_node.parquet, tracts_geojson=project/data/geo/tracts.geojson, out_parquet=project/data/node/panel_node_geo.parquet
+[attach_geo] Loading centroids from project/data/geo/tracts.geojson...
+[attach_geo] Loaded 3017 centroid(s).
+[attach_geo] Reading CSV: project/data/node/panel_node.csv
+[attach_geo] Loaded table with 49047 rows.
+[attach_geo] Writing CSV: project/data/node/panel_node_geo.csv
+[attach_geo] done.
+[attach_geo] start: in_parquet=project/data/node/node_signals.parquet, tracts_geojson=project/data/geo/tracts.geojson, out_parquet=project/data/node/node_signals_geo.parquet
+[attach_geo] Loading centroids from project/data/geo/tracts.geojson...
+[attach_geo] Loaded 3017 centroid(s).
+[attach_geo] Reading CSV: project/data/node/node_signals.csv
+[attach_geo] Loaded table with 24202 rows.
+[attach_geo] Writing CSV: project/data/node/node_signals_geo.csv
+[attach_geo] done.
+[attach_geo] start: in_parquet=project/data/node/panel_node.parquet, tracts_geojson=project/data/geo/tracts.geojson, out_parquet=project/data/node/panel_node_geo.parquet
+[attach_geo] Loading centroids from project/data/geo/tracts.geojson...
+[attach_geo] Loaded 3017 centroid(s).
+[attach_geo] Reading CSV: project/data/node/panel_node.csv
+[attach_geo] Loaded table with 49047 rows.
+[attach_geo] Writing CSV: project/data/node/panel_node_geo.csv
+[attach_geo] done.
+[attach_geo] start: in_parquet=project/data/node/node_signals.parquet, tracts_geojson=project/data/geo/tracts.geojson, out_parquet=project/data/node/node_signals_geo.parquet
+[attach_geo] Loading centroids from project/data/geo/tracts.geojson...
+[attach_geo] Loaded 3017 centroid(s).
+[attach_geo] Reading CSV: project/data/node/node_signals.csv
+[attach_geo] Loaded table with 24202 rows.
+[attach_geo] Writing CSV: project/data/node/node_signals_geo.csv
+[attach_geo] done.
+[attach_geo] start: in_parquet=project/data/node/panel_node.parquet, tracts_geojson=project/data/geo/tracts.geojson, out_parquet=project/data/node/panel_node_geo.parquet
+[attach_geo] Loading centroids from project/data/geo/tracts.geojson...
+[attach_geo] Loaded 3017 centroid(s).
+[attach_geo] Reading CSV: project/data/node/panel_node.csv
+[attach_geo] Loaded table with 49047 rows.
+[attach_geo] Writing parquet: project/data/node/panel_node_geo.parquet
+[attach_geo] ERROR while writing output: Unable to find a usable engine; tried using: 'pyarrow', 'fastparquet'.
+A suitable version of pyarrow or fastparquet is required for parquet support.
+Trying to import the above resulted in these errors:
+ - Missing optional dependency 'pyarrow'. pyarrow is required for parquet support. Use pip or conda to install pyarrow.
+ - Missing optional dependency 'fastparquet'. fastparquet is required for parquet support. Use pip or conda to install fastparquet.
+[attach_geo] start: in_parquet=project/data/node/panel_node.parquet, tracts_geojson=project/data/geo/tracts.geojson, out_parquet=project/data/node/panel_node_geo.parquet
+[attach_geo] Loading centroids from project/data/geo/tracts.geojson...
+[attach_geo] Loaded 3017 centroid(s).
+[attach_geo] Reading CSV: project/data/node/panel_node.csv
+[attach_geo] Loaded table with 49047 rows.
+[attach_geo] Writing parquet: project/data/node/panel_node_geo.parquet
+[attach_geo] Failed to write parquet (Unable to find a usable engine; tried using: 'pyarrow', 'fastparquet'.
+A suitable version of pyarrow or fastparquet is required for parquet support.
+Trying to import the above resulted in these errors:
+ - Missing optional dependency 'pyarrow'. pyarrow is required for parquet support. Use pip or conda to install pyarrow.
+ - Missing optional dependency 'fastparquet'. fastparquet is required for parquet support. Use pip or conda to install fastparquet.); falling back to CSV.
+[attach_geo] Writing CSV: project/data/node/panel_node_geo.csv
+[attach_geo] done.
+[attach_geo] start: in_parquet=project/data/node/node_signals.parquet, tracts_geojson=project/data/geo/tracts.geojson, out_parquet=project/data/node/node_signals_geo.parquet
+[attach_geo] Loading centroids from project/data/geo/tracts.geojson...
+[attach_geo] Loaded 3017 centroid(s).
+[attach_geo] Reading CSV: project/data/node/node_signals.csv
+[attach_geo] Loaded table with 24202 rows.
+[attach_geo] Writing parquet: project/data/node/node_signals_geo.parquet
+[attach_geo] Failed to write parquet (Unable to find a usable engine; tried using: 'pyarrow', 'fastparquet'.
+A suitable version of pyarrow or fastparquet is required for parquet support.
+Trying to import the above resulted in these errors:
+ - Missing optional dependency 'pyarrow'. pyarrow is required for parquet support. Use pip or conda to install pyarrow.
+ - Missing optional dependency 'fastparquet'. fastparquet is required for parquet support. Use pip or conda to install fastparquet.); falling back to CSV.
+[attach_geo] Writing CSV: project/data/node/node_signals_geo.csv
+[attach_geo] done.
+[attach_geo] start: in_parquet=project/data/node/panel_node.parquet, tracts_geojson=project/data/geo/tracts.geojson, out_parquet=project/data/node/panel_node_geo.parquet
+[attach_geo] Loading centroids from project/data/geo/tracts.geojson...
+[attach_geo] Loaded 3017 centroid(s).
+[attach_geo] Reading CSV: project/data/node/panel_node.csv
+[attach_geo] Loaded table with 49047 rows.
+[attach_geo] Writing parquet: project/data/node/panel_node_geo.parquet
+[attach_geo] Failed to write parquet (Unable to find a usable engine; tried using: 'pyarrow', 'fastparquet'.
+A suitable version of pyarrow or fastparquet is required for parquet support.
+Trying to import the above resulted in these errors:
+ - Missing optional dependency 'pyarrow'. pyarrow is required for parquet support. Use pip or conda to install pyarrow.
+ - Missing optional dependency 'fastparquet'. fastparquet is required for parquet support. Use pip or conda to install fastparquet.); falling back to CSV.
+[attach_geo] Writing CSV: project/data/node/panel_node_geo.csv
+[attach_geo] done.
+[attach_geo] start: in_parquet=project/data/node/node_signals.parquet, tracts_geojson=project/data/geo/tracts.geojson, out_parquet=project/data/node/node_signals_geo.parquet
+[attach_geo] Loading centroids from project/data/geo/tracts.geojson...
+[attach_geo] Loaded 3017 centroid(s).
+[attach_geo] Reading CSV: project/data/node/node_signals.csv
+[attach_geo] Loaded table with 24202 rows.
+[attach_geo] Writing parquet: project/data/node/node_signals_geo.parquet
+[attach_geo] Failed to write parquet (Unable to find a usable engine; tried using: 'pyarrow', 'fastparquet'.
+A suitable version of pyarrow or fastparquet is required for parquet support.
+Trying to import the above resulted in these errors:
+ - Missing optional dependency 'pyarrow'. pyarrow is required for parquet support. Use pip or conda to install pyarrow.
+ - Missing optional dependency 'fastparquet'. fastparquet is required for parquet support. Use pip or conda to install fastparquet.); falling back to CSV.
+[attach_geo] Writing CSV: project/data/node/node_signals_geo.csv
+[attach_geo] done.
+[attach_geo] start: in_parquet=project/data/node/panel_node.parquet, tracts_geojson=project/data/geo/tracts.geojson, out_parquet=project/data/node/panel_node_geo.parquet
+[attach_geo] Loading centroids from project/data/geo/tracts.geojson...
+[attach_geo] Loaded 3017 centroid(s).
+[attach_geo] Reading CSV: project/data/node/panel_node.csv
+[attach_geo] Loaded table with 49047 rows.
+[attach_geo] Writing parquet: project/data/node/panel_node_geo.parquet
+[attach_geo] Failed to write parquet (Unable to find a usable engine; tried using: 'pyarrow', 'fastparquet'.
+A suitable version of pyarrow or fastparquet is required for parquet support.
+Trying to import the above resulted in these errors:
+ - Missing optional dependency 'pyarrow'. pyarrow is required for parquet support. Use pip or conda to install pyarrow.
+ - Missing optional dependency 'fastparquet'. fastparquet is required for parquet support. Use pip or conda to install fastparquet.); falling back to CSV.
+[attach_geo] Writing CSV: project/data/node/panel_node_geo.csv
+[attach_geo] done.
+[attach_geo] start: in_parquet=project/data/node/node_signals.parquet, tracts_geojson=project/data/geo/tracts.geojson, out_parquet=project/data/node/node_signals_geo.parquet
+[attach_geo] Loading centroids from project/data/geo/tracts.geojson...
+[attach_geo] Loaded 3017 centroid(s).
+[attach_geo] Reading CSV: project/data/node/node_signals.csv
+[attach_geo] Loaded table with 24202 rows.
+[attach_geo] Writing parquet: project/data/node/node_signals_geo.parquet
+[attach_geo] Failed to write parquet (Unable to find a usable engine; tried using: 'pyarrow', 'fastparquet'.
+A suitable version of pyarrow or fastparquet is required for parquet support.
+Trying to import the above resulted in these errors:
+ - Missing optional dependency 'pyarrow'. pyarrow is required for parquet support. Use pip or conda to install pyarrow.
+ - Missing optional dependency 'fastparquet'. fastparquet is required for parquet support. Use pip or conda to install fastparquet.); falling back to CSV.
+[attach_geo] Writing CSV: project/data/node/node_signals_geo.csv
+[attach_geo] done.
+[attach_geo] start: in_parquet=project/data/node/panel_node.parquet, tracts_geojson=project/data/geo/tracts.geojson, out_parquet=project/data/node/panel_node_geo.parquet
+[attach_geo] Loading centroids from project/data/geo/tracts.geojson...
+[attach_geo] Loaded 3017 centroid(s).
+[attach_geo] Reading CSV: project/data/node/panel_node.csv
+[attach_geo] Loaded table with 49047 rows.
+[attach_geo] Writing parquet: project/data/node/panel_node_geo.parquet
+[attach_geo] Failed to write parquet (Unable to find a usable engine; tried using: 'pyarrow', 'fastparquet'.
+A suitable version of pyarrow or fastparquet is required for parquet support.
+Trying to import the above resulted in these errors:
+ - Missing optional dependency 'pyarrow'. pyarrow is required for parquet support. Use pip or conda to install pyarrow.
+ - Missing optional dependency 'fastparquet'. fastparquet is required for parquet support. Use pip or conda to install fastparquet.); falling back to CSV.
+[attach_geo] Writing CSV: project/data/node/panel_node_geo.csv
+[attach_geo] done.
+[attach_geo] start: in_parquet=project/data/node/node_signals.parquet, tracts_geojson=project/data/geo/tracts.geojson, out_parquet=project/data/node/node_signals_geo.parquet
+[attach_geo] Loading centroids from project/data/geo/tracts.geojson...
+[attach_geo] Loaded 3017 centroid(s).
+[attach_geo] Reading CSV: project/data/node/node_signals.csv
+[attach_geo] Loaded table with 24202 rows.
+[attach_geo] Writing parquet: project/data/node/node_signals_geo.parquet
+[attach_geo] Failed to write parquet (Unable to find a usable engine; tried using: 'pyarrow', 'fastparquet'.
+A suitable version of pyarrow or fastparquet is required for parquet support.
+Trying to import the above resulted in these errors:
+ - Missing optional dependency 'pyarrow'. pyarrow is required for parquet support. Use pip or conda to install pyarrow.
+ - Missing optional dependency 'fastparquet'. fastparquet is required for parquet support. Use pip or conda to install fastparquet.); falling back to CSV.
+[attach_geo] Writing CSV: project/data/node/node_signals_geo.csv
+[attach_geo] done.
+[attach_geo] start: in_parquet=project/data/node/panel_node.parquet, tracts_geojson=project/data/geo/tracts.geojson, out_parquet=project/data/node/panel_node_geo.parquet
+[attach_geo] Loading centroids from project/data/geo/tracts.geojson...
+[attach_geo] Loaded 3017 centroid(s).
+[attach_geo] Reading CSV: project/data/node/panel_node.csv
+[attach_geo] Loaded table with 49047 rows.
+[attach_geo] Writing parquet: project/data/node/panel_node_geo.parquet
+[attach_geo] Failed to write parquet (Unable to find a usable engine; tried using: 'pyarrow', 'fastparquet'.
+A suitable version of pyarrow or fastparquet is required for parquet support.
+Trying to import the above resulted in these errors:
+ - Missing optional dependency 'pyarrow'. pyarrow is required for parquet support. Use pip or conda to install pyarrow.
+ - Missing optional dependency 'fastparquet'. fastparquet is required for parquet support. Use pip or conda to install fastparquet.); falling back to CSV.
+[attach_geo] Writing CSV: project/data/node/panel_node_geo.csv
+[attach_geo] done.
+[attach_geo] start: in_parquet=project/data/node/node_signals.parquet, tracts_geojson=project/data/geo/tracts.geojson, out_parquet=project/data/node/node_signals_geo.parquet
+[attach_geo] Loading centroids from project/data/geo/tracts.geojson...
+[attach_geo] Loaded 3017 centroid(s).
+[attach_geo] Reading CSV: project/data/node/node_signals.csv
+[attach_geo] Loaded table with 24202 rows.
+[attach_geo] Writing parquet: project/data/node/node_signals_geo.parquet
+[attach_geo] Failed to write parquet (Unable to find a usable engine; tried using: 'pyarrow', 'fastparquet'.
+A suitable version of pyarrow or fastparquet is required for parquet support.
+Trying to import the above resulted in these errors:
+ - Missing optional dependency 'pyarrow'. pyarrow is required for parquet support. Use pip or conda to install pyarrow.
+ - Missing optional dependency 'fastparquet'. fastparquet is required for parquet support. Use pip or conda to install fastparquet.); falling back to CSV.
+[attach_geo] Writing CSV: project/data/node/node_signals_geo.csv
+[attach_geo] done.
+[attach_geo] start: in_parquet=project/data/node/panel_node.parquet, tracts_geojson=project/data/geo/tracts.geojson, out_parquet=project/data/node/panel_node_geo.parquet
+[attach_geo] Loading centroids from project/data/geo/tracts.geojson...
+[attach_geo] Loaded 3017 centroid(s).
+[attach_geo] Reading CSV: project/data/node/panel_node.csv
+[attach_geo] Loaded table with 49047 rows.
+[attach_geo] Writing parquet: project/data/node/panel_node_geo.parquet
+[attach_geo] Failed to write parquet (Unable to find a usable engine; tried using: 'pyarrow', 'fastparquet'.
+A suitable version of pyarrow or fastparquet is required for parquet support.
+Trying to import the above resulted in these errors:
+ - Missing optional dependency 'pyarrow'. pyarrow is required for parquet support. Use pip or conda to install pyarrow.
+ - Missing optional dependency 'fastparquet'. fastparquet is required for parquet support. Use pip or conda to install fastparquet.); falling back to CSV.
+[attach_geo] Writing CSV: project/data/node/panel_node_geo.csv
+[attach_geo] done.
+[attach_geo] start: in_parquet=project/data/node/node_signals.parquet, tracts_geojson=project/data/geo/tracts.geojson, out_parquet=project/data/node/node_signals_geo.parquet
+[attach_geo] Loading centroids from project/data/geo/tracts.geojson...
+[attach_geo] Loaded 3017 centroid(s).
+[attach_geo] Reading CSV: project/data/node/node_signals.csv
+[attach_geo] Loaded table with 24202 rows.
+[attach_geo] Writing parquet: project/data/node/node_signals_geo.parquet
+[attach_geo] Failed to write parquet (Unable to find a usable engine; tried using: 'pyarrow', 'fastparquet'.
+A suitable version of pyarrow or fastparquet is required for parquet support.
+Trying to import the above resulted in these errors:
+ - Missing optional dependency 'pyarrow'. pyarrow is required for parquet support. Use pip or conda to install pyarrow.
+ - Missing optional dependency 'fastparquet'. fastparquet is required for parquet support. Use pip or conda to install fastparquet.); falling back to CSV.
+[attach_geo] Writing CSV: project/data/node/node_signals_geo.csv
+[attach_geo] done.

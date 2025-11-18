@@ -320,24 +320,28 @@ def plot_cycle_hotspots(top_edges_df, nodes_geojson: str, out_png: str) -> bool:
         print("Cycle hotspot plot skipped: no edges with coordinates.")
         return False
     max_strength = max(strengths) if strengths else 1.0
-    plt.figure(figsize=(6, 6))
+    fig, ax = plt.subplots(figsize=(6, 6))
+    # Light background nodes
+    ax.scatter(xs, ys, s=4, color="#bbbbbb", alpha=0.6, linewidths=0)
+    # Hotspot corridors on top
     for (lon_pair, lat_pair), strength in zip(lines, strengths):
-        lw = 0.5 + 3.5 * (strength / max_strength) ** 0.5
-        alpha = 0.2 + 0.6 * (strength / max_strength)
-        plt.plot(
+        norm = strength / max_strength if max_strength > 0 else 0.0
+        lw = 0.4 + 3.6 * (norm ** 0.5)
+        alpha = 0.15 + 0.65 * norm
+        ax.plot(
             lon_pair,
             lat_pair,
             color="#c02739",
             linewidth=lw,
             alpha=max(0.1, min(1.0, alpha)),
         )
-    plt.scatter(xs, ys, s=5, color="#333333", alpha=0.25)
-    plt.xlabel("Longitude")
-    plt.ylabel("Latitude")
-    plt.title("Cycle hotspots (top edges)")
-    plt.axis("equal")
-    plt.tight_layout()
+    ax.set_aspect("equal", adjustable="datalim")
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+    fig.tight_layout()
     os.makedirs(os.path.dirname(out_png), exist_ok=True)
-    plt.savefig(out_png, dpi=150)
-    plt.close()
+    fig.savefig(out_png, dpi=150)
+    plt.close(fig)
     return True

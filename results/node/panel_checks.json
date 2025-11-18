@@ -1,0 +1,27 @@
+{
+  "2020": {
+    "sum_rho_H": 3800662.0,
+    "sum_rho_W": 3743819.0,
+    "sum_In": 3743819.0,
+    "sum_Out": 3743819.0,
+    "rel_err_In_vs_W": 0.0,
+    "rel_err_Out_vs_H": -0.01495607870418364,
+    "n_tracts": 24202
+  },
+  "2021": {
+    "sum_rho_H": 3881683.0,
+    "sum_rho_W": 3826637.0,
+    "sum_In": 3826637.0,
+    "sum_Out": 3826637.0,
+    "rel_err_In_vs_W": 0.0,
+    "rel_err_Out_vs_H": -0.014180962226951557,
+    "n_tracts": 24845
+  },
+  "overlap": {
+    "y0": 2020,
+    "y1": 2021,
+    "n_common": 2971,
+    "n_union": 2971,
+    "match_rate": 1.0
+  }
+}

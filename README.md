@@ -1,4 +1,4 @@
-Project: SEMCOG 2020 OD Diagnostics
+# SEMCOG 2020 OD Diagnostics
 
 ## Overview (1‑liner + 3 commands + key figures)
 
