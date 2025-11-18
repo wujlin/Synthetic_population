@@ -30,7 +30,7 @@ python -m project.src.cli export_figs
 | 阶段 | 输出 | 说明 |
 | --- | --- | --- |
 | Phase 0 | `data/processed/{od_clean.csv, nodes_basic.csv, edges_with_distance.csv}` | 清洗后的 OD、节点与距离 |
-| Phase 1 | `data/processed/od_residual_glm.parquet|csv`，`results/diagnostics/baseline_glm_summary.json` | PPML 残差 + 距离系数 $\lambda_{dist}\approx -0.94$ |
+| Phase 1 | `data/processed/od_residual_glm.{parquet,csv}`，`results/diagnostics/baseline_glm_summary.json` | PPML 残差 + 距离系数 $\lambda_{dist}\approx -0.94$ |
 | Phase 2 | `nodes_potential_glm.csv`、`edges_decomp_glm.csv`、`summary_robustness.json` | Robust Hodge：$R^2 \approx 0.108$，$\eta \approx 0.935$ |
 | Phase 2+ | `rot_summary.json`、`top_cycles.csv`、`fig_cycles_hotspots.png` | 循环热点图与三角环 |
 | Phase 3 | `pde_kappa.json`、`pde_diffusion.json`、`pde_interface.json` | $\kappa \approx -0.80$ 显著；$D,\Gamma$ 均 $\mathcal{O}(10^{-12})$ |
@@ -41,9 +41,9 @@ python -m project.src.cli export_figs
 - 其它阶段若缺 `matplotlib` / `pyarrow` 会退化为 CSV-only，并在控制台提示需要安装。
 
 ## 结构项简释
-- 势项 $\kappa$：基于 $ \tilde N_{ij}=(F_{ij}-F_{ji})-(\mu_{ij}-\mu_{ji}) $，使用特征 $[\rho_{ij}, c_{ij}, c_{ij}\Delta\pi_{ij}]$ 进行 WLS；当前结果 $\kappa \approx -0.80$（t≈−105）。
-- 扩散 $D$：拟合 $ \hat N_{ij} \sim -D(\rho_j-\rho_i) $；当前 $\Delta R^2 \approx 6\times 10^{-4}$，可忽略。
-- 界面 $\Gamma$：利用图拉普拉斯 $L\rho$ 构造 $ -\Gamma(\nabla^2\rho_j-\nabla^2\rho_i) $；当前贡献同样 <0.001。
+- 势项 $\kappa$：基于 $\tilde N_{ij}=(F_{ij}-F_{ji})-(\mu_{ij}-\mu_{ji})$，使用特征 $[\rho_{ij}, c_{ij}, c_{ij}\Delta\pi_{ij}]$ 进行 WLS；当前结果 $\kappa \approx -0.80$（t≈−105）。
+- 扩散 $D$：拟合 $\hat N_{ij} \sim -D(\rho_j-\rho_i)$；当前 $\Delta R^2 \approx 6\times 10^{-4}$，可忽略。
+- 界面 $\Gamma$：利用图拉普拉斯 $L\rho$ 构造 $-\Gamma(\nabla^2\rho_j-\nabla^2\rho_i)$；当前贡献同样 <0.001。
 - 旋度/循环：`rot_diagnostics` 输出 η 层级与 top cycles，并生成循环热点图 `fig_cycles_hotspots.png`。
 
 ## 可视化套件

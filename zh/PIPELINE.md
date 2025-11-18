@@ -12,7 +12,7 @@ python -m project.src.cli baseline_glm --backend sklearn --max-iter 10000 --alph
 ```
 - 定义：$\log \mu_{ij} = \alpha_i + \beta_j - \lambda \cdot dist_{ij} (+ \text{county pair FE})$。
 - 最新结果：$\lambda_{dist} \approx -0.94$，`n_obs = 496096`。
-- 输出：`od_residual_glm.parquet|csv`、`baseline_glm_summary.json`。
+- 输出：`od_residual_glm.{parquet,csv}`、`baseline_glm_summary.json`。
 
 ## Phase 2：Robust Hodge
 - 命令：

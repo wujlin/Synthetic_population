@@ -119,9 +119,9 @@ flowchart LR
 |---|---|---|
 | `data/raw/semcog_tract_od_intra_2020.csv` | Phase 0 | Raw OD (`work, home, S000`) |
 | `data/geo/tracts.geojson` | Phase 0 | Centroids (`GEOID, INTPTLAT/LON`) |
-| `data/processed/od_clean.parquet|csv` | Phase 0 | Cleaned OD |
+| `data/processed/od_clean.{parquet,csv}` | Phase 0 | Cleaned OD |
 | `data/processed/edges_with_distance.csv` | Phase 0 | OD + `distance_km` |
-| `data/processed/od_residual_glm.parquet|csv` | Phase 1 | `mu_hat, log_resid_glm` |
+| `data/processed/od_residual_glm.{parquet,csv}` | Phase 1 | `mu_hat, log_resid_glm` |
 | `results/diagnostics/baseline_glm_summary.json` | Phase 1 | PPML convergence, λ (distance), deviance, backend |
 | `results/diagnostics/nodes_potential_glm.csv` | Phase 2 | Potential π per tract |
 | `results/diagnostics/edges_decomp_glm.csv` | Phase 2 | `g_ij, pred=π_j-π_i, resid, weight` |
@@ -158,9 +158,9 @@ flowchart LR
 | $W_j = \sum_i F_{ij}$ | Total inflow at home tract j | Marginal |
 | $E_{ij}$ | Independence expected $= \frac{R_i W_j}{\sum F}$ | Scale‑effect baseline |
 | $\hat{\mu}_{ij}$ | PPML expectation | Phase 1 output |
-| $\log\_resid$ | $\log\frac{F_{ij}+\varepsilon}{E_{ij}+\varepsilon}$ | Independent residual |
-| $\log\_resid\_{\mathrm{glm}}$ | $\log\frac{F_{ij}+\varepsilon}{\hat{\mu}_{ij}+\varepsilon}$ | Phase 1 residual |
-| $g_{ij}$ | Directional signal $=\log\_resid\_{ij}-\log\_resid\_{ji}$ | Anti‑symmetric |
+| `log_resid` | $\log\frac{F_{ij}+\varepsilon}{E_{ij}+\varepsilon}$ | Independent residual |
+| `log_resid_glm` | $\log\frac{F_{ij}+\varepsilon}{\hat{\mu}_{ij}+\varepsilon}$ | Phase 1 residual |
+| $g_{ij}$ | Directional signal $=\log\frac{F_{ij}+\varepsilon}{\hat{\mu}_{ij}+\varepsilon}-\log\frac{F_{ji}+\varepsilon}{\hat{\mu}_{ji}+\varepsilon}$ | Anti‑symmetric |
 | $w_{ij}$ | Weight, default $F_{ij}+F_{ji}$ (can cap $\min(\cdot,\tau)$) | Hodge weighting |
 | $\pi$ | Potential (node value) | $g_{ij} \approx \pi(j) - \pi(i)$ |
 | $R^2$ | Potential fit | Higher is better |

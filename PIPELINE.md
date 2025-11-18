@@ -9,7 +9,7 @@ Pipeline: SEMCOG 2020 OD Diagnostics
 
 - Potential (π) boxplots
   - Observation: County‑level π differs systematically (e.g., Livingston/Washtenaw/St. Clair higher; Oakland/Macomb/Monroe/Wayne lower).
-  - Reading: g_ij≈π_j−π_i; low‑π→high‑π aligns with net attraction (after scale effect removal).
+  - Reading: $g_{ij} \approx \pi_j - \pi_i$; low‑π→high‑π aligns with net attraction (after scale effect removal).
   - Implication: π is a target for interpretable external‑feature regression U(x) (access, POIs, housing/income, etc.).
 
 - Locality curve
@@ -63,11 +63,11 @@ flowchart LR
 python -m project.src.cli baseline_glm --backend sklearn --eps 0.5 \
   --max-iter 5000 --alpha 1e-8 --standardize-dist [--county-pair-fe]
 ```
-Definition: $\log \mu_{ij} = \alpha_i + \beta_j - \lambda\cdot \mathrm{dist}_{ij}$ (optionally with county‑by‑county FE); $\;\log\_\mathrm{resid\_glm} = \log\tfrac{F\_{ij}+\epsilon}{\hat\mu\_{ij}+\epsilon}$.
+Definition: $\log \mu_{ij} = \alpha_i + \beta_j - \lambda\cdot \mathrm{dist}_{ij}$ (optionally with county‑by‑county FE). Define the GLM log residual $r^{(\mathrm{glm})}_{ij} = \log\left(\tfrac{F_{ij}+\epsilon}{\hat{\mu}_{ij}+\epsilon}\right)$ for downstream diagnostics.
 
-**Outputs**: `data/processed/od_residual_glm.parquet|csv` (`mu_hat, log_resid_glm`), `results/diagnostics/baseline_glm_summary.json` (λ, deviance, backend).
+**Outputs**: `data/processed/od_residual_glm.{parquet,csv}` (`mu_hat, log_resid_glm`), `results/diagnostics/baseline_glm_summary.json` (λ, deviance, backend).
 
-**Latest run**: λ_dist ≈ **−0.94** (`backend=sklearn`, `standardize_dist=True`, no county×county FE), `dist_mean ≈ 28.88 km`, `dist_std ≈ 19.92 km`.
+**Latest run**: $\lambda_{\mathrm{dist}} \approx$ **−0.94** (`backend=sklearn`, `standardize_dist=True`, no county×county FE), `dist_mean ≈ 28.88 km`, `dist_std ≈ 19.92 km`.
 
 **Acceptance**: vs independent baseline, downstream Hodge shows **R² ↑, η ↓**.
 
@@ -124,13 +124,13 @@ flowchart LR
 
 - Phase 4 — Loop structure (make η spatial)
   - Purpose: Turn non‑reciprocity into interpretable cycles/corridors.
-  - Actions: approximate triangle strength $C\_{ijk}=g\_{ij}+g\_{jk}+g\_{ki}$ on `edges_decomp_glm`; export Top‑K cycles and hotspots.
+  - Actions: approximate triangle strength $C_{ijk}=g_{ij}+g_{jk}+g_{ki}$ on `edges_decomp_glm`; export Top‑K cycles and hotspots.
   - Outputs: `results/diagnostics/top_cycles.csv`, `results/figures/fig_cycles_hotspots.png`.
   - Acceptance: Main cycles align with inter‑county / medium‑long corridors.
 
 - Phase 5 — Multi‑potential / potential + anti‑symmetric (choose one to start)
-  - Route 5A (multi‑potential): cluster (NMF/spectral) into K subnetworks; per subnet: PPML→Hodge→$\pi^{(k)}$; combine $\log F\_{ij}=\alpha\_i+\beta\_j-\lambda d\_{ij}+\log\sum\_k w\_k e^{\pi^{(k)}(j)-\pi^{(k)}(i)}$; validate on held‑out edges.
-  - Route 5B (potential + anti‑symmetric edge term): $\log F\_{ij}=\alpha\_i+\beta\_j-\lambda d\_{ij}+[\pi(j)-\pi(i)]+A\_{ij}$ with $A\_{ij}=-A\_{ji}$; design anti‑symmetric features; fit $A\_{ij}$; validate on held‑out edges.
+  - Route 5A (multi‑potential): cluster (NMF/spectral) into K subnetworks; per subnet: PPML→Hodge→$\pi^{(k)}$; combine $\log F_{ij}=\alpha_i+\beta_j-\lambda d_{ij}+\log\sum_k w_k e^{\pi^{(k)}(j)-\pi^{(k)}(i)}$; validate on held‑out edges.
+  - Route 5B (potential + anti‑symmetric edge term): $\log F_{ij}=\alpha_i+\beta_j-\lambda d_{ij}+[\pi(j)-\pi(i)]+A_{ij}$ with $A_{ij}=-A_{ji}$; design anti‑symmetric features; fit $A_{ij}$; validate on held‑out edges.
   - Outputs: `multi_potential_nmf/*` or `antisym_edge_model/*`.
   - Acceptance: Significant uplift vs "single potential + distance" on held‑out; directions match spatial intuition.
 

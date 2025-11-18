@@ -3,7 +3,7 @@
 ## Phase 1 – PPML baseline
 - Command: `python -m project.src.cli baseline_glm --backend sklearn --max-iter 10000 --alpha 1e-10 --standardize-dist`
 - Observations: **496,096**
-- Distance coefficient: **λ_dist ≈ −0.94** (sklearn PoissonRegressor, standardized distance, no county×county FE)
+- Distance coefficient: **$\lambda_{\mathrm{dist}} \approx -0.94$** (sklearn PoissonRegressor, standardized distance, no county×county FE)
 - Log file: `results/diagnostics/baseline_glm_summary.json`
 
 ## Phase 2 – Robust Hodge + locality

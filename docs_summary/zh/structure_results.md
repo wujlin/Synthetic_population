@@ -3,7 +3,7 @@
 ## Phase 1：PPML 基线
 - 命令：`python -m project.src.cli baseline_glm --backend sklearn --max-iter 10000 --alpha 1e-10 --standardize-dist`
 - 样本量：**496,096**
-- 距离系数：**λ_dist ≈ −0.94**（sklearn PoissonRegressor、距离标准化、无县×县双向固定效应）
+- 距离系数：**$\lambda_{\mathrm{dist}} \approx -0.94$**（sklearn PoissonRegressor、距离标准化、无县×县双向固定效应）
 - 日志：`results/diagnostics/baseline_glm_summary.json`
 
 ## Phase 2：Robust Hodge + Locality

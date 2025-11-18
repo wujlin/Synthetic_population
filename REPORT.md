@@ -35,7 +35,7 @@ Glossary
 
 - PPML baseline (Phase 1, sklearn PoissonRegressor with standardized distance)
   - Observations: 496,096
-  - λ_dist ≈ **−0.94** (dist mean ≈28.9 km, std ≈19.9 km), backend=`sklearn`
+- $\lambda_{\mathrm{dist}} \approx$ **−0.94** (dist mean ≈28.9 km, std ≈19.9 km), backend=`sklearn`
   - Source: `project/results/diagnostics/baseline_glm_summary.json`
 
 - Independent-baseline Hodge (full, top-150k undirected edges)
@@ -135,7 +135,7 @@ Structure-term regressions (figures require matplotlib; JSON values already prod
 ## Notes on PPML Baseline
 
 - Command: `python -m project.src.cli baseline_glm --eps 0.5 --county-pair-fe`
-- Outputs: project/data/processed/od_residual_glm.parquet|csv (mu_hat, log_resid_glm), project/results/diagnostics/baseline_glm_summary.json (λ, deviance)
+- Outputs: `project/data/processed/od_residual_glm.{parquet,csv}` (`mu_hat`, `log_resid_glm`), `project/results/diagnostics/baseline_glm_summary.json` (λ, deviance)
 - Implementation uses sparse OneHot + PoissonRegressor when dense statsmodels design would exceed memory.
 - After baseline_glm, re-run robust Hodge on GLM residuals:
   `python -m project.src.cli potential_hodge_glm --weight-type cap --cap-tau 200 --drop-self --sample-edges 120000 --bins-dist 8 --bins-weight 8 --seed 42 --max-edges 150000 --maxiter 300 --tol 1e-5`
