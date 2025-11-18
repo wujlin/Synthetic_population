@@ -25,7 +25,7 @@ This report summarizes the first phases of the tract→tract OD diagnostics on S
   - Medium/long‑distance corridors are more one‑way and circular: we need richer models (more forces or explicit one‑way terms) and targeted interventions.
   - The potential π is a useful “relative attractiveness” score for places. We can relate π to accessible jobs, transit, amenities, or housing to guide policy.
 
-Glossary
+### Glossary
 - Potential (π): a relative value per area; flows tend to move from lower to higher π after removing size effects.
 - R²: how much of the arrow directions a simple “downhill” model explains (higher is better).
 - η (non‑reciprocity): how much is left as one‑way/loop effects (higher means more one‑way/loop structure).
@@ -35,7 +35,7 @@ Glossary
 
 - PPML baseline (Phase 1, sklearn PoissonRegressor with standardized distance)
   - Observations: 496,096
-- $\lambda_{\mathrm{dist}} \approx$ **−0.94** (dist mean ≈28.9 km, std ≈19.9 km), backend=`sklearn`
+  - $\lambda_{\mathrm{dist}} \approx$ **−0.94** (dist mean ≈28.9 km, std ≈19.9 km), backend=`sklearn`
   - Source: `project/results/diagnostics/baseline_glm_summary.json`
 
 - Independent-baseline Hodge (full, top-150k undirected edges)
