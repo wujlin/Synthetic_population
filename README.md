@@ -160,7 +160,7 @@ flowchart LR
 | $\hat{\mu}_{ij}$ | PPML expectation | Phase 1 output |
 | `log_resid` | $\log\frac{F_{ij}+\varepsilon}{E_{ij}+\varepsilon}$ | Independent residual |
 | `log_resid_glm` | $\log\frac{F_{ij}+\varepsilon}{\hat{\mu}_{ij}+\varepsilon}$ | Phase 1 residual |
-| $g_{ij}$ | Directional signal $=\log\frac{F_{ij}+\varepsilon}{\hat{\mu}_{ij}+\varepsilon}-\log\frac{F_{ji}+\varepsilon}{\hat{\mu}_{ji}+\varepsilon}$ | Anti‑symmetric |
+| $g_{ij}$ | Directional signal $=\log\left(\frac{F_{ij}+\varepsilon}{\hat{\mu}_{ij}+\varepsilon}\right)-\log\left(\frac{F_{ji}+\varepsilon}{\hat{\mu}_{ji}+\varepsilon}\right)$ | Anti‑symmetric |
 | $w_{ij}$ | Weight, default $F_{ij}+F_{ji}$ (can cap $\min(\cdot,\tau)$) | Hodge weighting |
 | $\pi$ | Potential (node value) | $g_{ij} \approx \pi(j) - \pi(i)$ |
 | $R^2$ | Potential fit | Higher is better |
