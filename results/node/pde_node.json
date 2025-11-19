@@ -1,0 +1,33 @@
+{
+  "best_layer": "M0",
+  "detail": {
+    "layer": "M0",
+    "alpha": 0.1,
+    "coefficients": [
+      {
+        "name": "growth",
+        "mean": 0.027032175009770596,
+        "se": 7.106701486479859e-05,
+        "sign_stability": 1.0
+      },
+      {
+        "name": "intercept",
+        "mean": -7.297469321630461,
+        "se": 0.10619694520572533,
+        "sign_stability": 0.9879518072289156
+      }
+    ]
+  },
+  "meta": {
+    "r_star_km": 6.0,
+    "kernel": "gaussian",
+    "use_u_requested": [
+      "imb"
+    ],
+    "use_u_applied": [
+      "imb"
+    ],
+    "growth": "r*rho",
+    "include_bilaplacian": false
+  }
+}

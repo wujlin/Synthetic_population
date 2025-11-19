@@ -47,12 +47,23 @@ def _read_table_records(path: str) -> Tuple[List[Dict[str, str]], List[str]]:
     return rows, cols
 
 
+def _records_to_dataframe(records: List[Dict[str, str]], columns: List[str]):
+    df = pd.DataFrame(records, columns=columns)  # type: ignore
+    if "lat" in df.columns:
+        df["lat"] = pd.to_numeric(df["lat"], errors="coerce")
+    if "lon" in df.columns:
+        df["lon"] = pd.to_numeric(df["lon"], errors="coerce")
+    if "county" in df.columns:
+        df["county"] = df["county"].astype(str)
+    return df
+
+
 def _write_table_records(records: List[Dict[str, str]], columns: List[str], out_path: str) -> None:
     """Write records to parquet (if possible) or CSV fallback."""
     if out_path.endswith(".parquet") and HAVE_PANDAS:
         try:
             _log(f"[attach_geo] Writing parquet: {out_path}")
-            df = pd.DataFrame(records, columns=columns)  # type: ignore
+            df = _records_to_dataframe(records, columns)
             df.to_parquet(out_path, index=False)
             return
         except Exception as exc:
@@ -61,7 +72,7 @@ def _write_table_records(records: List[Dict[str, str]], columns: List[str], out_
     if HAVE_PANDAS and out_path.endswith(".csv"):
         # allow writing both csv and parquet if requested
         _log(f"[attach_geo] Writing parquet alongside CSV: {parquet_path}")
-        df = pd.DataFrame(records, columns=columns)  # type: ignore
+        df = _records_to_dataframe(records, columns)
         df.to_parquet(parquet_path, index=False)
     csv_out = out_path if out_path.endswith(".csv") else out_path.rsplit(".", 1)[0] + ".csv"
     _log(f"[attach_geo] Writing CSV: {csv_out}")

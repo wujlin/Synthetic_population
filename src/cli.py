@@ -1,7 +1,7 @@
 import argparse
 import csv
 import os
-from typing import Optional
+from typing import Dict, Optional
 
 from . import io as io_mod
 from . import hodge as hodge_mod
@@ -457,6 +457,63 @@ def cmd_export_figs(args: argparse.Namespace) -> None:
         print('Skipped (missing matplotlib or data):', ', '.join(skipped))
 
 
+def cmd_node_pde_fit(args: argparse.Namespace) -> None:
+    from . import node_pde
+    import numpy as np
+
+    df = node_pde.load_node_panel()
+    phi0 = df["rhoH_2020"].to_numpy(dtype=float)
+    phi1 = df["rhoH_2021"].to_numpy(dtype=float)
+    county = df["county"].astype(str).to_numpy()
+    neighbors, weights = node_pde.build_graph(df, r_star_km=args.r_star_km, kernel=args.kernel)
+
+    use_u = args.use_u or []
+    U_fields: Dict[str, np.ndarray] = {}
+    required_cols = {"rhoW_2020", "rhoH_2020"}
+    missing_cols = [col for col in required_cols if col not in df.columns]
+    if use_u and missing_cols:
+        raise ValueError(f"Missing required columns for external fields: {missing_cols}")
+    if "acc" in use_u:
+        U_fields["acc"] = node_pde.gaussian_smooth_from_graph(
+            df["rhoW_2020"].to_numpy(dtype=float), neighbors, weights
+        )
+    if "imb" in use_u:
+        U_fields["imb"] = np.log1p(df["rhoW_2020"].to_numpy(dtype=float)) - np.log1p(
+            df["rhoH_2020"].to_numpy(dtype=float)
+        )
+
+    X_dict = node_pde.make_columns(
+        phi0,
+        neighbors,
+        weights,
+        U_dict=U_fields if U_fields else None,
+        include_bilaplacian=args.include_bilaplacian,
+    )
+    y = node_pde.target_delta(phi0, phi1, dt=1.0)
+    alpha_grid = None
+    if args.alpha_grid:
+        alpha_grid = [float(x.strip()) for x in args.alpha_grid.split(",") if x.strip()]
+    best_layer, coefs, cv_report = node_pde.fit_with_loco(
+        X_dict,
+        y,
+        county,
+        alpha_grid=alpha_grid,
+        one_se=True,
+        keep_top_k_taxis=2,
+    )
+    meta = {
+        "r_star_km": args.r_star_km,
+        "kernel": args.kernel,
+        "use_u_requested": use_u,
+        "use_u_applied": sorted(U_fields.keys()),
+        "growth": "r*rho",
+        "include_bilaplacian": args.include_bilaplacian,
+    }
+    out_dir = os.path.join("project", "results", "node")
+    node_pde.save_results(out_dir, best_layer, coefs, cv_report, meta)
+    print(f"Node PDE fit complete. Best layer: {best_layer}")
+
+
 def _legacy_main(argv=None):
     p = argparse.ArgumentParser(description="SEMCOG OD diagnostics pipeline")
     sub = p.add_subparsers(dest="cmd")
@@ -669,6 +726,25 @@ def _legacy_main(argv=None):
 
     sp = sub.add_parser("export_figs", help="Export figures for potential and summary metrics")
     sp.set_defaults(func=cmd_export_figs)
+
+    sp = sub.add_parser("node_pde_fit", help="Fit node-level PDE with LOCO Ridge")
+    sp.add_argument("--r-star-km", type=float, default=6.0, help="Neighborhood radius r* in km")
+    sp.add_argument("--kernel", type=str, default="gaussian", choices=["gaussian", "uniform"], help="Kernel weighting")
+    sp.add_argument(
+        "--use-u",
+        nargs="*",
+        default=[],
+        choices=["acc", "imb"],
+        help="Frozen external fields to include (acc, imb)",
+    )
+    sp.add_argument("--include-bilaplacian", action="store_true", help="Include bilaplacian term (M3)")
+    sp.add_argument(
+        "--alpha-grid",
+        type=str,
+        default=None,
+        help="Comma-separated Ridge alpha grid (default logspace 1e-6..1e-1)",
+    )
+    sp.set_defaults(func=cmd_node_pde_fit)
 
     sp = sub.add_parser("all", help="Run prepare + hodge + locality")
     sp.add_argument("--raw", type=str, default=None)
